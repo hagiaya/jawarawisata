@@ -1,26 +1,152 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
+@plugin "tailwindcss-animate";
+
+@custom-variant dark (&:is(.dark *));
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+
+  /* Fonts */
+  --font-serif: var(--font-playfair);
+  --font-sans: var(--font-lato);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+:root {
+  /* Premium Emerald & Gold Palette (Light Mode) */
+  --background: 40 33% 98%;
+  /* Warm Cream/Paper White */
+  --foreground: 160 30% 15%;
+  /* Deep Emerald Black */
+
+  --card: 0 0% 100%;
+  --card-foreground: 160 30% 15%;
+
+  --popover: 0 0% 100%;
+  --popover-foreground: 160 30% 15%;
+
+  --primary: 162 45% 30%;
+  /* Deep Emerald Green */
+  --primary-foreground: 40 40% 98%;
+
+  --secondary: 42 40% 90%;
+  /* Light Gold/Sand */
+  --secondary-foreground: 162 45% 20%;
+
+  --muted: 160 10% 95%;
+  --muted-foreground: 160 10% 40%;
+
+  --accent: 42 60% 65%;
+  /* Muted Gold/Bronze */
+  --accent-foreground: 160 30% 15%;
+
+  --destructive: 0 84.2% 60.2%;
+  --destructive-foreground: 210 40% 98%;
+
+  --border: 160 10% 85%;
+  --input: 160 10% 85%;
+  --ring: 162 45% 30%;
+
+  --radius: 0.75rem;
+  /* More rounded for premium feel */
+
+  /* Jejak Imani Gold */
+  --gold: 42 68% 55%;
+  --gold-foreground: 0 0% 100%;
+
+  --chart-1: 162 45% 30%;
+  --chart-2: 42 60% 65%;
+  --chart-3: 197 37% 24%;
+  --chart-4: 43 74% 66%;
+  --chart-5: 27 87% 67%;
+}
+
+.dark {
+  /* Premium Emerald & Gold Palette (Dark Mode) */
+  --background: 160 35% 8%;
+  /* Very Dark Green/Black */
+  --foreground: 40 30% 96%;
+  /* Warm White */
+
+  --card: 160 35% 10%;
+  --card-foreground: 40 30% 96%;
+
+  --popover: 160 35% 10%;
+  --popover-foreground: 40 30% 96%;
+
+  --primary: 162 45% 45%;
+  /* Brighter Emerald for dark mode */
+  --primary-foreground: 160 40% 10%;
+
+  --secondary: 160 25% 15%;
+  --secondary-foreground: 40 30% 96%;
+
+  --muted: 160 25% 15%;
+  --muted-foreground: 160 15% 65%;
+
+  --accent: 42 60% 65%;
+  /* Gold remains consistent */
+  --accent-foreground: 160 40% 10%;
+
+  --destructive: 0 62.8% 30.6%;
+  --destructive-foreground: 210 40% 98%;
+
+  --border: 160 25% 20%;
+  --input: 160 25% 20%;
+  --ring: 162 45% 45%;
+
+  --chart-1: 162 45% 45%;
+  --chart-2: 42 60% 65%;
+  --chart-3: 30 80% 55%;
+  --chart-4: 280 65% 60%;
+  --chart-5: 340 75% 55%;
+
+  --gold: 42 68% 55%;
+  --gold-foreground: 0 0% 100%;
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
   }
-}
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  body {
+    @apply bg-background text-foreground;
+  }
+
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    font-family: var(--font-serif);
+  }
 }
