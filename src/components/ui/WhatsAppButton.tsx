@@ -281,7 +281,7 @@ export function ChatWidget() {
 
     const waUrl = `https://wa.me/${WA_NUMBER}?text=${encodeURIComponent(WA_GREET)}`;
 
-    if (pathname?.startsWith("/admin")) return null;
+    if (pathname?.startsWith("/admin") || pathname?.startsWith("/android")) return null;
 
     /* ── Render ── */
     return (

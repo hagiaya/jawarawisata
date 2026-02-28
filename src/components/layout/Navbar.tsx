@@ -22,17 +22,14 @@ export function Navbar() {
     }, [])
 
     const navLinks = [
-        { name: "Tentang", href: "/about" },
-        { name: "Haji", href: "/haji" },
-        { name: "Umroh", href: "/umroh" },
-        { name: "Jelajah Dunia", href: "/halal-tour" },
-        { name: "Tabungan Umroh", href: "/tabungan" },
-        { name: "Badal Umroh", href: "/badal-umroh" },
-        { name: "Badal Haji", href: "/badal-haji" },
+        { name: "Beranda", href: "/" },
+        { name: "Paket", href: "/packages" },
         { name: "Artikel", href: "/articles" },
+        { name: "Lacak", href: "/tracking" },
+        { name: "Profil", href: "/profile" },
     ]
 
-    if (pathname?.startsWith("/admin")) {
+    if (pathname?.startsWith("/admin") || pathname?.startsWith("/android")) {
         return null;
     }
 
@@ -81,18 +78,6 @@ export function Navbar() {
                             {link.name}
                         </Link>
                     ))}
-                    {/* Tracking special link */}
-                    <Link
-                        href="/tracking"
-                        className={cn(
-                            "flex items-center gap-1.5 text-sm font-bold uppercase tracking-wide transition-colors px-3 py-1.5 rounded-full border",
-                            scrolled
-                                ? "text-[#d4a017] border-[#d4a017]/30 hover:bg-[#d4a017]/5"
-                                : "text-[#d4a017] border-[#d4a017]/40 hover:bg-white/10"
-                        )}
-                    >
-                        <Search className="w-3.5 h-3.5" /> Tracking
-                    </Link>
                 </nav>
 
                 {/* Right Side Actions */}
@@ -132,13 +117,6 @@ export function Navbar() {
                                 {link.name}
                             </Link>
                         ))}
-                        <Link
-                            href="/tracking"
-                            className="p-3 text-sm font-bold uppercase tracking-wide text-[#d4a017] hover:bg-amber-50 rounded-md transition-colors flex items-center gap-2"
-                            onClick={() => setIsOpen(false)}
-                        >
-                            <Search className="w-4 h-4" /> Lacak Status Pemesanan
-                        </Link>
                         <div className="h-px bg-border my-2" />
                         <Link
                             href="/contact"
