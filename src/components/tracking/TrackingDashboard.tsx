@@ -820,8 +820,8 @@ export function TrackingDashboard({ booking }: { booking: Booking }) {
                 const base64 = reader.result as string;
                 const res = await uploadDocument(booking.invoiceId, type, base64);
                 if (res?.success) {
-                    if (type === "ktp") setKtpUrl(res.url);
-                    if (type === "passport") setPassportUrl(res.url);
+                    if (type === "ktp") setKtpUrl(res.url || null);
+                    if (type === "passport") setPassportUrl(res.url || null);
                     alert("Upload berhasil! Dokumen akan segera direview admin.");
                 } else {
                     alert("Upload gagal: " + res?.error);
