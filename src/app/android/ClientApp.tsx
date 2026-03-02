@@ -1,6 +1,8 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
+import { createClient } from "@/lib/supabase/client";
+import { useRouter } from "next/navigation";
 import Image from "next/image";
 import {
     Home,
@@ -35,6 +37,74 @@ interface Package {
 
 export default function ClientApp({ packagesData }: { packagesData: Package[] }) {
     const [activeTab, setActiveTab] = useState("home");
+    const [authLoading, setAuthLoading] = useState(false);
+    const [authError, setAuthError] = useState("");
+    const [userBookings, setUserBookings] = useState<any[]>([]);
+    const [loadingBookings, setLoadingBookings] = useState(false);
+    const [trackingInvoice, setTrackingInvoice] = useState<string | null>(null);
+    const [searchInvoice, setSearchInvoice] = useState("");
+    const router = useRouter();
+
+    useEffect(() => {
+        const fetchUserBookings = async (userId: string) => {
+            setLoadingBookings(true);
+            try {
+                const { data, error } = await supabase
+                    .from("bookings")
+                    .select("*, packages(*)")
+                    .eq("user_id", userId)
+                    .order("created_at", { ascending: false });
+                if (!error && data) setUserBookings(data);
+            } catch (e) {
+                console.error("Android fetch bookings error", e);
+            } finally {
+                setLoadingBookings(false);
+            }
+        };
+
+        const checkUser = async () => {
+            const { data: { session } } = await supabase.auth.getSession();
+            setUser(session?.user || null);
+            if (session?.user) fetchUserBookings(session.user.id);
+
+            supabase.auth.onAuthStateChange((_event, session) => {
+                setUser(session?.user || null);
+                if (session?.user) fetchUserBookings(session.user.id);
+                else setUserBookings([]);
+            });
+        };
+        checkUser();
+    }, [supabase]);
+
+    const handleAuth = async (e: React.FormEvent) => {
+        e.preventDefault();
+        setAuthLoading(true);
+        setAuthError("");
+        try {
+            if (authMode === 'register') {
+                const { error } = await supabase.auth.signUp({
+                    email, password, options: { data: { full_name: fullName } }
+                });
+                if (error) throw error;
+                setAuthMode('login');
+                setAuthError("Berhasil daftar! Silakan masuk.");
+            } else {
+                const { error } = await supabase.auth.signInWithPassword({ email, password });
+                if (error) throw error;
+                setActiveTab('profile'); // stay on profile to see user
+            }
+        } catch (err: any) {
+            setAuthError(err.message);
+        } finally {
+            setAuthLoading(false);
+        }
+    };
+
+    const handleLogout = async () => {
+        await supabase.auth.signOut();
+    };
+
+    // Derived state for packages
 
     const flashSale = packagesData.filter(p => p.flash_sale || p.promo_price).slice(0, 3);
     // Tampilkan 6 paket pertama sebagai rekomendasi. Jika ada flash sale, bisa tetap muncul atau difilter, tapi pastikan list tidak kosong.
@@ -53,15 +123,15 @@ export default function ClientApp({ packagesData }: { packagesData: Package[] })
 
                     <div className="relative z-10 flex justify-between items-center mb-8">
                         <div className="flex items-center gap-3">
-                            <div className="w-12 h-12 rounded-full border-2 border-[#d4a017] p-0.5 relative">
+                            <div className="w-12 h-12 rounded-full border-2 border-[#d4a017] p-0.5 relative cursor-pointer" onClick={() => setActiveTab('profile')}>
                                 <div className="w-full h-full bg-white/10 rounded-full flex items-center justify-center overflow-hidden">
                                     <User className="text-white/80 w-6 h-6" />
                                 </div>
                                 <div className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 border-2 border-[#1a0a00] rounded-full"></div>
                             </div>
-                            <div>
-                                <p className="text-white/60 text-xs font-medium">Ahlan wa Sahlan,</p>
-                                <h2 className="text-white font-bold text-lg leading-tight">Tamu Allah</h2>
+                            <div onClick={() => setActiveTab('profile')} className="cursor-pointer">
+                                <p className="text-white/60 text-xs font-medium">{user ? 'Ahlan wa Sahlan,' : 'Tamu Allah,'}</p>
+                                <h2 className="text-white font-bold text-lg leading-tight">{user ? user.user_metadata?.full_name || 'Jamaah' : 'Silakan Masuk'}</h2>
                             </div>
                         </div>
                         <button className="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center relative backdrop-blur-sm border border-white/10">
@@ -121,7 +191,7 @@ export default function ClientApp({ packagesData }: { packagesData: Package[] })
                     </div>
                     <div className="flex gap-4 overflow-x-auto pb-4 -mx-6 px-6 snap-x hide-scrollbar">
                         {flashSale.map(pkg => (
-                            <div key={pkg.id} className="snap-center shrink-0 w-[260px] bg-white rounded-2xl shadow-md border border-gray-100 overflow-hidden cursor-pointer active:scale-95 transition-transform" onClick={() => setActiveTab('packages')}>
+                            <div key={pkg.id} className="snap-center shrink-0 w-[260px] bg-white rounded-2xl shadow-md border border-gray-100 overflow-hidden cursor-pointer active:scale-95 transition-transform" onClick={() => router.push(`/packages/${pkg.id}`)}>
                                 <div className="h-[140px] relative bg-gray-200">
                                     {pkg.image_url ? (
                                         <Image src={pkg.image_url} alt={pkg.title} fill className="object-cover" />
@@ -154,7 +224,7 @@ export default function ClientApp({ packagesData }: { packagesData: Package[] })
                 </div>
                 <div className="grid grid-cols-2 gap-3">
                     {regularPackages.map(pkg => (
-                        <div key={pkg.id} className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden flex flex-col active:scale-95 transition-transform cursor-pointer" onClick={() => setActiveTab('packages')}>
+                        <div key={pkg.id} className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden flex flex-col active:scale-95 transition-transform cursor-pointer" onClick={() => router.push(`/packages/${pkg.id}`)}>
                             <div className="h-32 relative bg-gray-200 shrink-0">
                                 {pkg.image_url && <Image src={pkg.image_url} alt={pkg.title} fill className="object-cover" />}
                                 <div className="absolute top-2 right-2 bg-white/90 backdrop-blur-sm px-1.5 py-0.5 flex items-center gap-1 rounded-md text-[9px] font-bold shadow-sm">
@@ -280,7 +350,7 @@ export default function ClientApp({ packagesData }: { packagesData: Package[] })
                 </div>
                 <div className="grid grid-cols-2 gap-3">
                     {filteredPackages.map(pkg => (
-                        <div key={pkg.id} className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden flex flex-col active:scale-95 transition-transform cursor-pointer">
+                        <div key={pkg.id} className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden flex flex-col active:scale-95 transition-transform cursor-pointer" onClick={() => router.push(`/packages/${pkg.id}`)}>
                             <div className="h-32 relative bg-gray-200 shrink-0">
                                 {pkg.image_url && <Image src={pkg.image_url} alt={pkg.title} fill className="object-cover" />}
                                 <div className="absolute top-2 right-2 bg-white/90 backdrop-blur-sm px-1.5 py-0.5 flex items-center gap-1 rounded-md text-[9px] font-bold shadow-sm">
@@ -314,43 +384,88 @@ export default function ClientApp({ packagesData }: { packagesData: Package[] })
         </div>
     );
 
-    const renderTracking = () => (
-        <div className="pb-24 pt-16 px-5 animate-in fade-in slide-in-from-right-4 duration-300">
-            <div className="fixed top-0 left-0 right-0 max-w-md mx-auto bg-white/90 backdrop-blur-md z-30 pt-12 pb-3 px-5 header-safe border-b border-gray-100">
-                <h2 className="font-bold text-xl text-gray-800 text-center">Lacak Pesanan</h2>
-            </div>
-            <div className="mt-8 flex flex-col items-center">
-                <div className="w-24 h-24 bg-blue-50 text-blue-500 rounded-full flex items-center justify-center mb-6 shadow-inner">
-                    <Search className="w-10 h-10" />
-                </div>
-                <h3 className="font-bold text-xl text-center text-gray-800 mb-2">Cek Status Keberangkatan</h3>
-                <p className="text-gray-500 text-sm text-center mb-8">Masukkan nomor invoice atau KTP Anda untuk melihat update perjalanan ibadah.</p>
+    const renderTracking = () => {
+        if (trackingInvoice) {
+            router.push(`/tracking/${trackingInvoice}`);
+            return null; // Will navigate out for full tracking detail or we could embed it here
+        }
 
-                <div className="w-full space-y-4">
-                    <div className="bg-gray-50 rounded-2xl p-1 border border-gray-200 focus-within:border-[#d4a017] transition-colors relative">
-                        <input type="text" placeholder="Contoh: INV-2026-001" className="w-full bg-transparent px-4 py-3 text-sm outline-none" />
+        return (
+            <div className="pb-24 pt-16 px-5 animate-in fade-in slide-in-from-right-4 duration-300">
+                <div className="fixed top-0 left-0 right-0 max-w-md mx-auto bg-white/90 backdrop-blur-md z-30 pt-12 pb-3 px-5 header-safe border-b border-gray-100">
+                    <h2 className="font-bold text-xl text-gray-800 text-center">Lacak Pesanan</h2>
+                </div>
+                <div className="mt-8 flex flex-col items-center">
+                    <div className="w-16 h-16 bg-blue-50 text-blue-500 rounded-2xl flex items-center justify-center mb-6 shadow-inner">
+                        <Search className="w-8 h-8" />
                     </div>
-                    <Button className="w-full h-12 rounded-xl bg-[#d4a017] hover:bg-[#b88a10] text-white font-bold text-base shadow-lg shadow-[#d4a017]/30">Cari Pesanan</Button>
-                </div>
+                    <h3 className="font-bold text-lg text-center text-gray-800 mb-2">Cek Status Keberangkatan</h3>
+                    <p className="text-gray-400 text-[11px] text-center mb-6">Masukkan nomor invoice Anda untuk memantau update real-time perjalanan ibadah.</p>
 
-                <div className="w-full mt-10">
-                    <h4 className="font-bold text-sm text-gray-800 mb-4">Butuh Bantuan?</h4>
-                    <div className="bg-white rounded-xl p-4 border border-gray-100 shadow-sm flex items-center justify-between">
-                        <div className="flex gap-3 items-center">
-                            <div className="w-10 h-10 bg-green-100 text-green-600 rounded-full flex items-center justify-center">
-                                <HeadphonesIcon className="w-5 h-5" />
+                    <div className="w-full space-y-3 mb-8">
+                        <div className="bg-gray-100 rounded-xl p-1 border border-transparent focus-within:border-[#d4a017] focus-within:bg-white transition-all transform focus-within:scale-[1.02]">
+                            <input
+                                type="text"
+                                placeholder="Contoh: INV-XXXXX"
+                                value={searchInvoice}
+                                onChange={(e) => setSearchInvoice(e.target.value.toUpperCase())}
+                                className="w-full bg-transparent px-4 py-3 text-sm font-bold uppercase tracking-widest outline-none"
+                            />
+                        </div>
+                        <Button
+                            onClick={() => searchInvoice && router.push(`/tracking/${searchInvoice}`)}
+                            className="w-full h-12 rounded-xl bg-gradient-to-r from-[#d4a017] to-[#b88a10] text-white font-bold text-sm shadow-lg shadow-[#d4a017]/30"
+                        >
+                            Lacak Pesanan
+                        </Button>
+                    </div>
+
+                    {user && userBookings.length > 0 && (
+                        <div className="w-full">
+                            <div className="flex items-center justify-between mb-4">
+                                <h4 className="font-bold text-sm text-gray-800">Pesanan Aktif Anda</h4>
+                                <span className="text-[10px] font-bold text-[#d4a017]">{userBookings.length} Paket</span>
                             </div>
-                            <div>
-                                <p className="text-sm font-bold text-gray-800">Hubungi CS</p>
-                                <p className="text-xs text-gray-500">Live chat WA 24/7</p>
+                            <div className="space-y-3">
+                                {userBookings.map((booking) => (
+                                    <div
+                                        key={booking.id}
+                                        onClick={() => router.push(`/tracking/INV-${booking.id.substring(0, 8).toUpperCase()}`)}
+                                        className="bg-white p-4 rounded-2xl border border-gray-100 shadow-sm flex items-center gap-4 active:scale-95 transition-transform"
+                                    >
+                                        <div className="w-12 h-12 bg-amber-50 rounded-xl flex items-center justify-center text-[#d4a017]">
+                                            <Plane className="w-6 h-6" />
+                                        </div>
+                                        <div className="flex-1 min-w-0">
+                                            <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">INV-{booking.id.substring(0, 8).toUpperCase()}</p>
+                                            <h5 className="font-bold text-sm text-gray-800 truncate">{booking.packages?.title || "Paket Umroh"}</h5>
+                                            <div className="flex items-center gap-2 mt-1">
+                                                <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${booking.status === 'confirmed' ? 'bg-green-100 text-green-600' :
+                                                        booking.status === 'pending' ? 'bg-amber-100 text-amber-600' : 'bg-gray-100 text-gray-600'
+                                                    }`}>
+                                                    {booking.status.toUpperCase()}
+                                                </span>
+                                                <span className="text-[10px] text-gray-400 font-medium">Lacak Sekarang →</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                ))}
                             </div>
                         </div>
-                        <ChevronLeft className="w-5 h-5 text-gray-300 rotate-180" />
-                    </div>
+                    )}
+
+                    {!user && (
+                        <div className="w-full p-5 bg-stone-50 rounded-2xl border border-stone-200 text-center">
+                            <Info className="w-6 h-6 text-[#d4a017] mx-auto mb-2" />
+                            <p className="text-xs font-bold text-gray-700">Login untuk Lacak Otomatis</p>
+                            <p className="text-[10px] text-gray-500 mt-1 mb-4">Riwayat pemesanan Anda akan muncul di sini secara otomatis jika Anda masuk.</p>
+                            <Button variant="outline" onClick={() => setActiveTab('profile')} className="h-9 px-6 rounded-lg font-bold text-[11px] border-[#d4a017] text-[#d4a017] hover:bg-amber-50">Masuk Sekarang</Button>
+                        </div>
+                    )}
                 </div>
             </div>
-        </div>
-    );
+        );
+    };
 
     return (
         <div className="w-full h-[100dvh] max-w-md mx-auto bg-gray-50 relative overflow-x-hidden overflow-y-auto font-sans shadow-2xl safe-area-wrapper">
@@ -375,11 +490,124 @@ export default function ClientApp({ packagesData }: { packagesData: Package[] })
                     </div>
                 )}
                 {activeTab === 'profile' && (
-                    <div className="flex flex-col items-center justify-center h-[100dvh] text-gray-400">
-                        <User className="w-12 h-12 mb-4 text-gray-300" />
-                        <h3 className="font-bold text-gray-800 text-lg">Profil Anda</h3>
-                        <p className="text-sm">Silakan hubungi admin</p>
-                        <button className="mt-6 px-4 py-2 bg-[#d4a017] text-white rounded-xl text-xs font-bold shadow" onClick={() => setActiveTab('home')}>Kembali ke Beranda</button>
+                    <div className="p-6 pt-16 h-[100dvh] flex flex-col items-center bg-gray-50 overflow-y-auto animate-in fade-in slide-in-from-right-4 duration-300">
+                        {user ? (
+                            <div className="w-full flex flex-col items-center max-w-sm mt-8">
+                                <div className="w-24 h-24 rounded-full bg-[#1a0a00] text-[#d4a017] flex items-center justify-center shadow-lg border-4 border-white mb-4">
+                                    <User className="w-12 h-12" />
+                                </div>
+                                <h3 className="font-bold text-gray-800 text-xl">{user.user_metadata?.full_name || 'Hamba Allah'}</h3>
+                                <p className="text-sm text-gray-500 mb-8">{user.email}</p>
+
+                                <div className="w-full space-y-3">
+                                    <div className="bg-white rounded-2xl p-4 border border-gray-100 shadow-sm">
+                                        <div className="flex items-center justify-between mb-4 border-b border-gray-50 pb-2">
+                                            <h4 className="text-xs font-black uppercase text-gray-400 tracking-wider">Aktivitas Terakhir</h4>
+                                            <button onClick={() => setActiveTab('tracking')} className="text-[10px] font-bold text-[#d4a017]">Lihat Semua</button>
+                                        </div>
+                                        {userBookings.length > 0 ? (
+                                            <div className="space-y-4">
+                                                {userBookings.slice(0, 2).map(b => (
+                                                    <div key={b.id} className="flex items-center gap-3">
+                                                        <div className="w-10 h-10 bg-stone-50 rounded-lg flex items-center justify-center border border-stone-100">
+                                                            <Package className="w-5 h-5 text-[#d4a017]" />
+                                                        </div>
+                                                        <div className="flex-1 min-w-0">
+                                                            <p className="text-xs font-bold text-gray-800 truncate">{b.packages?.title}</p>
+                                                            <p className="text-[10px] text-gray-400">Status: <span className="font-bold text-[#d4a017] uppercase">{b.status}</span></p>
+                                                        </div>
+                                                        <Button
+                                                            variant="outline"
+                                                            className="h-7 text-[10px] font-black rounded-lg px-3 border-[#d4a017] text-[#d4a017]"
+                                                            onClick={() => router.push(`/tracking/INV-${b.id.substring(0, 8).toUpperCase()}`)}
+                                                        >
+                                                            LACAK
+                                                        </Button>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        ) : (
+                                            <p className="text-xs text-gray-400 text-center py-4 italic">Belum ada pemesanan paket.</p>
+                                        )}
+                                    </div>
+
+                                    <div className="w-full space-y-3 pt-4">
+                                        <div className="bg-white rounded-xl p-4 flex items-center gap-3 shadow-sm border border-gray-100 cursor-pointer hover:bg-gray-50 transition-colors" onClick={() => setActiveTab('tracking')}>
+                                            <div className="w-9 h-9 rounded-lg bg-blue-50 text-blue-500 flex items-center justify-center">
+                                                <Search className="w-4 h-4" />
+                                            </div>
+                                            <div className="flex-1">
+                                                <p className="text-sm font-bold text-gray-800">Cek Status Manual</p>
+                                                <p className="text-[10px] text-gray-500">Cari invoice keberangkatan</p>
+                                            </div>
+                                            <ChevronRight className="w-4 h-4 text-gray-300" />
+                                        </div>
+
+                                        <div className="bg-white rounded-xl p-4 flex items-center gap-3 shadow-sm border border-gray-100 cursor-pointer hover:bg-gray-50 transition-colors">
+                                            <div className="w-9 h-9 rounded-lg bg-purple-50 text-purple-500 flex items-center justify-center">
+                                                <Shield className="w-4 h-4" />
+                                            </div>
+                                            <div className="flex-1">
+                                                <p className="text-sm font-bold text-gray-800">Ubah Profil</p>
+                                                <p className="text-[10px] text-gray-500">Nama, WhatsApp, Paspor</p>
+                                            </div>
+                                            <ChevronRight className="w-4 h-4 text-gray-300" />
+                                        </div>
+
+                                        <button onClick={handleLogout} className="w-full bg-red-50 text-red-600 rounded-xl py-4 font-bold text-sm hover:bg-red-100 transition-all flex items-center justify-center gap-2 mt-4">
+                                            <XCircle className="w-4 h-4" /> Keluar Akun
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        ) : (
+                            <div className="w-full max-w-sm flex flex-col mt-4">
+                                <div className="text-center mb-8">
+                                    <div className="w-16 h-16 rounded-full bg-[#1a0a00] text-[#d4a017] flex items-center justify-center mx-auto mb-4">
+                                        <Shield className="w-8 h-8" />
+                                    </div>
+                                    <h3 className="font-bold text-gray-800 text-xl">{authMode === 'login' ? 'Selamat Datang' : 'Daftar Akun'}</h3>
+                                    <p className="text-sm text-gray-500 mt-1">{authMode === 'login' ? 'Masuk untuk mengelola perjalanan ibadah Anda' : 'Buat akun untuk mulai memesan paket'}</p>
+                                </div>
+
+                                <form onSubmit={handleAuth} className="space-y-4">
+                                    {authMode === 'register' && (
+                                        <input
+                                            type="text"
+                                            placeholder="Nama Lengkap"
+                                            required
+                                            value={fullName}
+                                            onChange={e => setFullName(e.target.value)}
+                                            className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-[#d4a017]"
+                                        />
+                                    )}
+                                    <input
+                                        type="email"
+                                        placeholder="Email"
+                                        required
+                                        value={email}
+                                        onChange={e => setEmail(e.target.value)}
+                                        className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-[#d4a017]"
+                                    />
+                                    <input
+                                        type="password"
+                                        placeholder="Password"
+                                        required
+                                        value={password}
+                                        onChange={e => setPassword(e.target.value)}
+                                        className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-[#d4a017]"
+                                    />
+                                    {authError && <p className={`text-xs ${authError.includes('Berhasil') ? 'text-green-600' : 'text-red-500'} text-center`}>{authError}</p>}
+                                    <Button type="submit" disabled={authLoading} className="w-full h-12 bg-[#d4a017] hover:bg-[#b88a10] text-white rounded-xl font-bold shadow-md">
+                                        {authLoading ? 'Loading...' : (authMode === 'login' ? 'Masuk' : 'Daftar')}
+                                    </Button>
+                                </form>
+
+                                <button onClick={() => { setAuthMode(authMode === 'login' ? 'register' : 'login'); setAuthError(''); }} className="mt-6 text-sm text-gray-500 font-medium">
+                                    {authMode === 'login' ? 'Belum punya akun? Daftar' : 'Sudah punya akun? Masuk'}
+                                </button>
+                            </div>
+                        )}
                     </div>
                 )}
             </div>

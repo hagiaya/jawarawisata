@@ -4,8 +4,10 @@ create table profiles (
   updated_at timestamp with time zone,
   username text unique,
   full_name text,
+  phone text,
   avatar_url text,
   website text,
+  role text default 'user',
 
   constraint username_length check (char_length(username) >= 3)
 );
@@ -13,6 +15,15 @@ create table profiles (
 -- Set up Row Level Security (RLS)
 -- See https://supabase.com/docs/guides/auth/row-level-security for more details.
 alter table profiles enable row level security;
+
+-- Function to check admin status
+create or replace function public.is_admin()
+returns boolean
+language sql
+security definer
+as $$
+  select exists(select 1 from profiles where id = auth.uid() and role = 'admin');
+$$;
 
 create policy "Public profiles are viewable by everyone." on profiles
   for select using (true);
@@ -22,6 +33,9 @@ create policy "Users can insert their own profile." on profiles
 
 create policy "Users can update own profile." on profiles
   for update using (auth.uid() = id);
+
+create policy "Admins can do anything on profiles" on profiles
+  for all using (public.is_admin());
 
 -- Create a table for Umroh Packages
 create table packages (
@@ -77,6 +91,9 @@ create policy "Users can view their own bookings." on bookings
 create policy "Users can insert their own bookings." on bookings
   for insert with check (auth.uid() = user_id);
 
+create policy "Admins can view and update all bookings." on bookings
+  for all using (public.is_admin());
+
 -- Migration command for existing local db
 -- alter table bookings add column if not exists tracking_data jsonb default null;
 
@@ -113,3 +130,39 @@ create policy "Only admins can modify departures" on departures for all using (a
 
 -- Migration for bookings to link to kloter:
 -- alter table bookings add column if not exists departure_id uuid references departures(id) default null;
+
+-- ==========================================
+-- 3. TRIGGERS: Auto-create Profile on Signup
+-- ==========================================
+create or replace function public.handle_new_user()
+returns trigger
+language plpgsql
+security definer set search_path = ''
+as $$
+declare
+  is_admin boolean;
+begin
+  -- For demo purposes, the first user or a specific email becomes admin.
+  -- You can adjust this logic, e.g. check if new.email = 'admin@jawarawisata.com'
+  is_admin := false;
+  
+  IF new.email = 'admin@jawarawisata.com' THEN
+    is_admin := true;
+  END IF;
+
+  INSERT INTO public.profiles (id, full_name, phone, role)
+  VALUES (
+    new.id, 
+    new.raw_user_meta_data->>'full_name',
+    new.raw_user_meta_data->>'phone',
+    case when is_admin then 'admin' else 'user' end
+  );
+  return new;
+end;
+$$;
+
+drop trigger if exists on_auth_user_created on auth.users;
+
+create trigger on_auth_user_created
+  after insert on auth.users
+  for each row execute procedure public.handle_new_user();

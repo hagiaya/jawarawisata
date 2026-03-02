@@ -31,7 +31,7 @@ export default function LoginPage() {
         setError(null);
 
         try {
-            const { error } = await supabase.auth.signInWithPassword({
+            const { error, data } = await supabase.auth.signInWithPassword({
                 email,
                 password,
             });
@@ -41,10 +41,25 @@ export default function LoginPage() {
                 return;
             }
 
+            // Check if admin
+            if (data.user) {
+                const { data: profile } = await supabase
+                    .from('profiles')
+                    .select('role')
+                    .eq('id', data.user.id)
+                    .single();
+
+                if (profile?.role === 'admin') {
+                    router.push("/admin");
+                    router.refresh();
+                    return;
+                }
+            }
+
             router.push("/");
             router.refresh();
         } catch (err) {
-            setError("An unexpected error occurred");
+            setError("Telah terjadi kesalahan yang tidak terduga.");
         } finally {
             setLoading(false);
         }
@@ -54,9 +69,9 @@ export default function LoginPage() {
         <div className="flex min-h-[calc(100vh-4rem)] items-center justify-center p-4">
             <Card className="w-full max-w-md">
                 <CardHeader className="space-y-1">
-                    <CardTitle className="text-2xl font-bold">Welcome back</CardTitle>
+                    <CardTitle className="text-2xl font-bold">Selamat Datang</CardTitle>
                     <CardDescription>
-                        Enter your email to sign in to your account
+                        Masukkan email dan kata sandi untuk masuk ke akun Anda
                     </CardDescription>
                 </CardHeader>
                 <CardContent>
@@ -66,7 +81,7 @@ export default function LoginPage() {
                             <Input
                                 id="email"
                                 type="email"
-                                placeholder="m@example.com"
+                                placeholder="fulan@contoh.com"
                                 required
                                 value={email}
                                 onChange={(e) => setEmail(e.target.value)}
@@ -74,12 +89,12 @@ export default function LoginPage() {
                         </div>
                         <div className="space-y-2">
                             <div className="flex items-center justify-between">
-                                <Label htmlFor="password">Password</Label>
+                                <Label htmlFor="password">Kata Sandi</Label>
                                 <Link
                                     href="#"
-                                    className="text-sm font-medium text-primary hover:underline"
+                                    className="text-sm font-medium text-[#d4a017] hover:underline"
                                 >
-                                    Forgot password?
+                                    Lupa kata sandi?
                                 </Link>
                             </div>
                             <Input
@@ -93,17 +108,17 @@ export default function LoginPage() {
                         {error && (
                             <div className="text-sm text-red-500 font-medium">{error}</div>
                         )}
-                        <Button type="submit" className="w-full" disabled={loading}>
+                        <Button type="submit" className="w-full bg-[#d4a017] hover:bg-[#b88a10] text-white font-bold" disabled={loading}>
                             {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                            Sign In
+                            Masuk
                         </Button>
                     </form>
                 </CardContent>
                 <CardFooter className="flex justify-center">
                     <div className="text-sm text-gray-500">
-                        Don&apos;t have an account?{" "}
-                        <Link href="/register" className="text-primary hover:underline">
-                            Sign up
+                        Belum punya akun?{" "}
+                        <Link href="/register" className="text-[#d4a017] hover:underline font-bold">
+                            Daftar di sini
                         </Link>
                     </div>
                 </CardFooter>

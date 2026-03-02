@@ -20,40 +20,7 @@ export default async function AndroidPage() {
             packagesData = packages || [];
         }
     } catch (err) {
-        // Fallback to mock data for development
-    }
-
-    // Fallback to mock data if empty (useful for development)
-    if (packagesData.length === 0) {
-        packagesData = [
-            {
-                id: "mock-1",
-                title: "Umroh Berkah Plus Turki 12 Hari",
-                price: 32500000,
-                promo_price: 28900000,
-                image_url: "https://images.unsplash.com/photo-1591604129939-f1efa4d9f7fa?q=80&w=800",
-                package_type: "Plus Turki",
-                flash_sale: true,
-            },
-            {
-                id: "mock-2",
-                title: "Umroh Reguler Syawal 9 Hari",
-                price: 28500000,
-                promo_price: 24900000,
-                image_url: "https://images.unsplash.com/photo-1565552684305-7e43f3665045?q=80&w=800",
-                package_type: "Reguler",
-                flash_sale: true,
-            },
-            {
-                id: "mock-3",
-                title: "Umroh VIP Ramadhan 15 Hari",
-                price: 45000000,
-                promo_price: 39900000,
-                image_url: "https://images.unsplash.com/photo-1519817650390-64a93db51149?q=80&w=800",
-                package_type: "VIP",
-                flash_sale: true,
-            }
-        ];
+        console.error("Error fetching packages for android:", err);
     }
 
     return (

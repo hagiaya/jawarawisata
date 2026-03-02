@@ -2,32 +2,76 @@
 
 import * as React from "react"
 import Link from "next/link"
-import { usePathname } from "next/navigation"
-import { Menu, X, Search } from "lucide-react"
+import { usePathname, useRouter } from "next/navigation"
+import { Menu, X, Search, User, LogOut } from "lucide-react"
+import { createClient } from "@/lib/supabase/client"
 
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 
 export function Navbar() {
     const pathname = usePathname()
+    const router = useRouter()
     const [isOpen, setIsOpen] = React.useState(false)
     const [scrolled, setScrolled] = React.useState(false)
+    const [user, setUser] = React.useState<any>(null)
+    const [profile, setProfile] = React.useState<any>(null)
+    const supabase = createClient()
 
     React.useEffect(() => {
         const handleScroll = () => {
             setScrolled(window.scrollY > 20)
         }
         window.addEventListener("scroll", handleScroll)
+
+        // Check Auth
+        const checkUser = async () => {
+            const { data: { session } } = await supabase.auth.getSession()
+            setUser(session?.user || null)
+
+            if (session?.user) {
+                const { data: profile } = await supabase
+                    .from('profiles')
+                    .select('role')
+                    .eq('id', session.user.id)
+                    .single()
+                setProfile(profile)
+            }
+
+            supabase.auth.onAuthStateChange(async (_event, session) => {
+                setUser(session?.user || null)
+                if (session?.user) {
+                    const { data: profile } = await supabase
+                        .from('profiles')
+                        .select('role')
+                        .eq('id', session.user.id)
+                        .single()
+                    setProfile(profile)
+                } else {
+                    setProfile(null)
+                }
+            })
+        }
+        checkUser()
+
         return () => window.removeEventListener("scroll", handleScroll)
-    }, [])
+    }, [supabase.auth])
+
+    const handleLogout = async () => {
+        await supabase.auth.signOut()
+        router.push('/')
+        router.refresh()
+    }
 
     const navLinks = [
         { name: "Beranda", href: "/" },
         { name: "Paket", href: "/packages" },
-        { name: "Artikel", href: "/articles" },
         { name: "Lacak", href: "/tracking" },
-        { name: "Profil", href: "/profile" },
     ]
+
+    if (profile?.role === 'admin') {
+        navLinks.push({ name: "Admin", href: "/admin/packages" })
+    }
 
     if (pathname?.startsWith("/admin") || pathname?.startsWith("/android")) {
         return null;
@@ -82,13 +126,44 @@ export function Navbar() {
 
                 {/* Right Side Actions */}
                 <div className="flex items-center gap-4">
-                    <Link href="/contact" className="hidden sm:block">
-                        <Button
-                            className="bg-[#d4a017] hover:bg-[#b88a10] text-white font-bold rounded-full px-6 py-5 shadow-lg shadow-[#d4a017]/20 transition-all hover:scale-105"
-                        >
-                            Konsultasi Gratis
-                        </Button>
-                    </Link>
+                    <div className="hidden sm:block">
+                        {user ? (
+                            <div className="flex items-center gap-3">
+                                <Link href="/profile">
+                                    <Button variant="outline" className={cn(
+                                        "rounded-full px-5 py-5 border",
+                                        scrolled ? "border-gray-200 hover:bg-gray-50" : "border-white/20 text-white hover:bg-white/10 hover:text-white"
+                                    )}>
+                                        <User className="w-4 h-4 mr-2" />
+                                        Profil
+                                    </Button>
+                                </Link>
+                                <Button onClick={handleLogout} variant="ghost" className={cn(
+                                    "rounded-full px-4 py-5 font-bold",
+                                    scrolled ? "text-red-500 hover:bg-red-50" : "text-red-400 hover:bg-white/10"
+                                )}>
+                                    <LogOut className="w-4 h-4 mr-2" />
+                                    Keluar
+                                </Button>
+                            </div>
+                        ) : (
+                            <div className="flex items-center gap-3">
+                                <Link href="/login">
+                                    <Button variant="ghost" className={cn(
+                                        "rounded-full px-5 py-5 font-bold",
+                                        scrolled ? "hover:bg-gray-50 text-gray-700" : "text-white hover:bg-white/10"
+                                    )}>
+                                        Masuk
+                                    </Button>
+                                </Link>
+                                <Link href="/register">
+                                    <Button className="bg-[#d4a017] hover:bg-[#b88a10] text-white font-bold rounded-full px-6 py-5 shadow-lg shadow-[#d4a017]/20 transition-all hover:scale-105">
+                                        Daftar
+                                    </Button>
+                                </Link>
+                            </div>
+                        )}
+                    </div>
 
                     {/* Mobile Menu Toggle */}
                     <button
@@ -117,14 +192,48 @@ export function Navbar() {
                                 {link.name}
                             </Link>
                         ))}
+
                         <div className="h-px bg-border my-2" />
-                        <Link
-                            href="/contact"
-                            className="p-3 text-sm font-bold uppercase tracking-wide text-[#d4a017] hover:bg-muted rounded-md transition-colors"
-                            onClick={() => setIsOpen(false)}
-                        >
-                            Konsultasi Gratis
-                        </Link>
+
+                        {user ? (
+                            <>
+                                <Link
+                                    href="/profile"
+                                    className="p-3 text-sm font-bold uppercase tracking-wide hover:bg-muted rounded-md transition-colors flex items-center gap-2"
+                                    onClick={() => setIsOpen(false)}
+                                >
+                                    <User className="w-4 h-4" /> Profil
+                                </Link>
+                                <button
+                                    onClick={() => {
+                                        handleLogout();
+                                        setIsOpen(false);
+                                    }}
+                                    className="p-3 text-sm font-bold uppercase tracking-wide hover:bg-red-50 text-left text-red-500 rounded-md transition-colors flex items-center gap-2"
+                                >
+                                    <LogOut className="w-4 h-4" /> Keluar
+                                </button>
+                            </>
+                        ) : (
+                            <>
+                                <Link
+                                    href="/login"
+                                    className="p-3 text-sm font-bold uppercase tracking-wide hover:bg-muted rounded-md transition-colors"
+                                    onClick={() => setIsOpen(false)}
+                                >
+                                    Masuk Ke Akun
+                                </Link>
+                                <Link
+                                    href="/register"
+                                    className="p-3 text-sm font-bold uppercase tracking-wide hover:bg-muted rounded-md transition-colors"
+                                    onClick={() => setIsOpen(false)}
+                                >
+                                    Daftar Baru
+                                </Link>
+                            </>
+                        )}
+
+                        <div className="h-px bg-border my-2" />
                     </nav>
                 </div>
             )}

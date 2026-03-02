@@ -113,24 +113,30 @@ export interface Database {
                     updated_at: string | null
                     username: string | null
                     full_name: string | null
+                    phone: string | null
                     avatar_url: string | null
                     website: string | null
+                    role: 'admin' | 'user'
                 }
                 Insert: {
                     id: string
                     updated_at?: string | null
                     username?: string | null
                     full_name?: string | null
+                    phone?: string | null
                     avatar_url?: string | null
                     website?: string | null
+                    role?: 'admin' | 'user'
                 }
                 Update: {
                     id?: string
                     updated_at?: string | null
                     username?: string | null
                     full_name?: string | null
+                    phone?: string | null
                     avatar_url?: string | null
                     website?: string | null
+                    role?: 'admin' | 'user'
                 }
             }
         }

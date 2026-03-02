@@ -1,9 +1,11 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { LayoutDashboard, Package, Users, BookOpen, LogOut, Star, FileText, Plane, Wallet, Globe, PiggyBank } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { createClient } from "@/lib/supabase/client";
+import { useEffect, useState } from "react";
 
 const navItems = [
     { href: "/admin", label: "Dashboard", icon: LayoutDashboard },
@@ -19,6 +21,36 @@ const navItems = [
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
     const pathname = usePathname();
+    const router = useRouter();
+    const [isChecking, setIsChecking] = useState(true);
+
+    useEffect(() => {
+        const checkAdmin = async () => {
+            const supabase = createClient();
+            const { data: { session } } = await supabase.auth.getSession();
+            if (!session) {
+                router.replace('/login');
+                return;
+            }
+            const { data: profile } = await supabase
+                .from('profiles')
+                .select('role')
+                .eq('id', session.user.id)
+                .single();
+
+            if (profile?.role !== 'admin') {
+                router.replace('/');
+                return;
+            }
+
+            setIsChecking(false);
+        };
+        checkAdmin();
+    }, [router]);
+
+    if (isChecking) {
+        return <div className="min-h-screen bg-gray-50 flex items-center justify-center">Loading admin panel...</div>;
+    }
 
     return (
         <div className="flex min-h-screen bg-gray-50">

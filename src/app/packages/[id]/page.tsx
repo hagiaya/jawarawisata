@@ -6,7 +6,6 @@ import { Calendar, MapPin, Users, CheckCircle2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { Badge } from "@/components/ui/badge";
-import { MOCK_PACKAGES } from "@/app/page";
 import { BookingActions } from "@/components/packages/BookingActions";
 
 interface PackagePageProps {
@@ -31,8 +30,7 @@ export default async function PackagePage({ params }: PackagePageProps) {
         if (error) throw error;
         pkg = data;
     } catch (error) {
-        // Silently fallback to mock data since env vars are placeholders
-        pkg = MOCK_PACKAGES.find(p => p.id === id);
+        console.error("Error fetching package details:", id, error);
     }
 
     if (!pkg) {

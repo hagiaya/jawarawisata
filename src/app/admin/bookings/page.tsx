@@ -29,74 +29,7 @@ export default function AdminBookingsPage() {
                     throw new Error("No data or error");
                 }
             } catch (err) {
-                // If Supabase fails, use rich local mock data
-                setBookings([
-                    {
-                        id: "INV-8f9d2c1",
-                        user_id: "u1",
-                        package_id: "p1",
-                        status: "pending",
-                        payment_method: "DP",
-                        payment_status: "dp_paid",
-                        notes: "Mohon kamar mandi dekat lift",
-                        created_at: new Date(Date.now() - 3600000).toISOString(),
-                        updated_at: new Date(Date.now() - 3600000).toISOString(),
-                        profiles: { full_name: "Ahmad Zain", username: "ahmadz" },
-                        packages: { title: "Umroh Syawal 9 Hari" }
-                    },
-                    {
-                        id: "INV-3a7b9e4",
-                        user_id: "u2",
-                        package_id: "p2",
-                        status: "confirmed",
-                        payment_method: "Cicilan",
-                        payment_status: "dp_paid",
-                        notes: null,
-                        created_at: new Date(Date.now() - 86400000).toISOString(),
-                        updated_at: new Date(Date.now() - 86400000).toISOString(),
-                        profiles: { full_name: "Siti Aminah", username: "sitia" },
-                        packages: { title: "Umroh Plus Turki" }
-                    },
-                    {
-                        id: "INV-6c2d1f8",
-                        user_id: "u3",
-                        package_id: "p3",
-                        status: "confirmed",
-                        payment_method: "Tunai",
-                        payment_status: "paid",
-                        notes: null,
-                        created_at: new Date(Date.now() - 172800000).toISOString(),
-                        updated_at: new Date(Date.now() - 172800000).toISOString(),
-                        profiles: { full_name: "Budi Santoso", username: "budisant" },
-                        packages: { title: "Umroh VIP Ramadhan" }
-                    },
-                    {
-                        id: "INV-9e4a2c5",
-                        user_id: "u4",
-                        package_id: "p4",
-                        status: "cancelled",
-                        payment_method: null,
-                        payment_status: "unpaid",
-                        notes: "Batal karena sakit",
-                        created_at: new Date(Date.now() - 259200000).toISOString(),
-                        updated_at: new Date(Date.now() - 259200000).toISOString(),
-                        profiles: { full_name: "Dewi Lestari", username: "dewil" },
-                        packages: { title: "Haji Khusus 2026" }
-                    },
-                    {
-                        id: "INV-1b8f4d9",
-                        user_id: "u5",
-                        package_id: "p5",
-                        status: "pending",
-                        payment_method: "Tunai",
-                        payment_status: "unpaid",
-                        notes: null,
-                        created_at: new Date(Date.now() - 4000000).toISOString(),
-                        updated_at: new Date(Date.now() - 4000000).toISOString(),
-                        profiles: { full_name: "Hasanuddin", username: "hasanuddin" },
-                        packages: { title: "Umroh Reguler Plus City Tour" }
-                    }
-                ] as any);
+                console.error("Failed to load bookings from Supabase:", err);
                 setUseSupabase(false);
             } finally {
                 setLoading(false);

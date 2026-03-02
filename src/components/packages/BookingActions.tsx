@@ -11,8 +11,6 @@ interface BookingActionsProps {
 }
 
 export function BookingActions({ pkg }: BookingActionsProps) {
-    // Generate some mock alternative dates for the UI if needed, 
-    // or just use the main one. We'll provide 3 options based on the start_date.
     const baseDate = new Date(pkg.start_date);
     const duration = Math.ceil(
         (new Date(pkg.end_date).getTime() - new Date(pkg.start_date).getTime()) /
@@ -24,22 +22,8 @@ export function BookingActions({ pkg }: BookingActionsProps) {
             id: 1,
             start: baseDate,
             end: new Date(pkg.end_date),
-            label: "Keberangkatan Terdekat",
+            label: "Jadwal Keberangkatan",
             available: pkg.available_seats || 10
-        },
-        {
-            id: 2,
-            start: addDays(baseDate, 14),
-            end: addDays(baseDate, 14 + duration),
-            label: "Batch 2",
-            available: 15
-        },
-        {
-            id: 3,
-            start: addDays(baseDate, 28),
-            end: addDays(baseDate, 28 + duration),
-            label: "Batch 3",
-            available: 20
         }
     ];
 

@@ -1,10 +1,10 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { Plus, Pencil, Trash2, Save, X, Package, Users, Calendar } from "lucide-react";
+import { useState, useEffect, useRef } from "react";
+import { Plus, Pencil, Trash2, Save, X, Package, Users, Calendar, Upload } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Database } from "@/types/database.types";
-import { MOCK_PACKAGES } from "@/app/page";
+import { createClient } from "@/lib/supabase/client";
 
 type PackageRow = Database["public"]["Tables"]["packages"]["Row"];
 type ModalMode = "add" | "edit" | null;
@@ -17,6 +17,8 @@ export default function AdminPackagesPage() {
     const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
     const [useSupabase, setUseSupabase] = useState(false);
     const [notification, setNotification] = useState<{ type: "success" | "error"; message: string } | null>(null);
+    const [uploadingImage, setUploadingImage] = useState(false);
+    const fileInputRef = useRef<HTMLInputElement>(null);
 
     const [form, setForm] = useState<Partial<PackageRow>>({
         title: "",
@@ -54,24 +56,10 @@ export default function AdminPackagesPage() {
                     setPackages(data as PackageRow[]);
                     setUseSupabase(true);
                 } else {
-                    throw new Error("No data");
+                    console.warn("No data or error:", error);
                 }
-            } catch {
-                const saved = localStorage.getItem("adminPackages");
-                if (saved) {
-                    try {
-                        setPackages(JSON.parse(saved));
-                    } catch { }
-                } else {
-                    // map MOCK_PACKAGES to conform to PackageRow
-                    const mockRows = MOCK_PACKAGES.map(p => ({
-                        ...p,
-                        promo_price: p.promo_price || null,
-                        itinerary_pdf_url: p.itinerary_pdf_url || null,
-                        created_at: p.created_at || new Date().toISOString()
-                    })) as PackageRow[];
-                    setPackages(mockRows);
-                }
+            } catch (err) {
+                console.error("Failed to load from supabase:", err);
             }
         };
         loadFromSupabase();
@@ -141,6 +129,37 @@ export default function AdminPackagesPage() {
             showNotification("error", err.message || "Terjadi kesalahan.");
         } finally {
             setSaving(false);
+        }
+    };
+
+    const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        try {
+            if (!e.target.files || e.target.files.length === 0) return;
+            const file = e.target.files[0];
+            setUploadingImage(true);
+
+            const supabase = createClient();
+            const fileExt = file.name.split('.').pop();
+            const fileName = `${Math.random().toString(36).substring(2)}_${Date.now()}.${fileExt}`;
+            const filePath = `covers/${fileName}`;
+
+            const { error: uploadError } = await supabase.storage
+                .from('packages')
+                .upload(filePath, file, { cacheControl: '3600', upsert: false });
+
+            if (uploadError) {
+                throw uploadError;
+            }
+
+            const { data: { publicUrl } } = supabase.storage.from('packages').getPublicUrl(filePath);
+
+            setForm({ ...form, image_url: publicUrl });
+            showNotification("success", "Gambar berhasil diunggah!");
+        } catch (error: any) {
+            showNotification("error", "Gagal mengunggah: " + error.message);
+        } finally {
+            setUploadingImage(false);
+            if (fileInputRef.current) fileInputRef.current.value = "";
         }
     };
 
@@ -285,8 +304,43 @@ export default function AdminPackagesPage() {
                                     <input type="number" value={form.available_seats || 0} onChange={(e) => setForm({ ...form, available_seats: Number(e.target.value) })} className="w-full px-3 py-2 border rounded-xl" />
                                 </div>
                                 <div className="col-span-2">
-                                    <label className="block text-sm font-semibold text-gray-700 mb-1">URL Cover Image</label>
-                                    <input type="url" value={form.image_url || ""} onChange={(e) => setForm({ ...form, image_url: e.target.value })} className="w-full px-3 py-2 border rounded-xl" />
+                                    <label className="block text-sm font-semibold text-gray-700 mb-1">Foto Cover Paket</label>
+                                    <div className="flex gap-4 items-center">
+                                        <div className="flex-1">
+                                            <input
+                                                type="text"
+                                                readOnly
+                                                disabled
+                                                placeholder="Bisa unggah lewat file sebelah kanan ->"
+                                                value={form.image_url || ""}
+                                                className="w-full px-3 py-2 border rounded-xl bg-gray-50 text-gray-500 cursor-not-allowed"
+                                            />
+                                        </div>
+                                        <div className="relative">
+                                            <input
+                                                type="file"
+                                                accept="image/*"
+                                                onChange={handleImageUpload}
+                                                ref={fileInputRef}
+                                                className="hidden"
+                                            />
+                                            <Button
+                                                type="button"
+                                                variant="outline"
+                                                onClick={() => fileInputRef.current?.click()}
+                                                disabled={uploadingImage}
+                                                className="whitespace-nowrap rounded-xl flex items-center gap-2"
+                                            >
+                                                {uploadingImage ? <div className="w-4 h-4 border-2 border-gray-400 border-t-transparent rounded-full animate-spin" /> : <Upload className="w-4 h-4" />}
+                                                {uploadingImage ? "Mengunggah..." : "Unggah Foto"}
+                                            </Button>
+                                        </div>
+                                    </div>
+                                    {form.image_url && (
+                                        <div className="mt-4 relative aspect-video w-48 rounded-lg overflow-hidden border">
+                                            <img src={form.image_url} alt="Preview" className="w-full h-full object-cover" />
+                                        </div>
+                                    )}
                                 </div>
                                 <div className="col-span-2">
                                     <label className="block text-sm font-semibold text-gray-700 mb-1">Deskripsi Singkat</label>

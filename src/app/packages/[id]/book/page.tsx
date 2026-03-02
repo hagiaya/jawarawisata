@@ -1,8 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import { redirect, notFound } from "next/navigation";
 import { BookingForm } from "@/components/booking/BookingForm";
-import { MOCK_PACKAGES } from "@/app/page";
-
 interface BookingPageProps {
     params: Promise<{
         id: string;
@@ -20,13 +18,7 @@ export default async function BookingPage({ params }: BookingPageProps) {
     } catch (e) { }
 
     if (!user) {
-        user = {
-            id: "mock_user_123",
-            email: "contohjamaah@jawarawisata.com",
-            user_metadata: {
-                full_name: "Muhammad Contoh Jamaah"
-            }
-        };
+        redirect("/login");
     }
 
     let pkg = null;
@@ -41,7 +33,7 @@ export default async function BookingPage({ params }: BookingPageProps) {
         if (error) throw error;
         pkg = data;
     } catch (error) {
-        pkg = MOCK_PACKAGES.find(p => p.id === id);
+        console.error("Error fetching package for booking:", id, error);
     }
 
     if (!pkg) {

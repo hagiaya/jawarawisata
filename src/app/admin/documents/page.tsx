@@ -26,36 +26,8 @@ export default function AdminDocumentsPage() {
                     throw new Error("No data");
                 }
             } catch (err) {
-                // Mock data fallback
-                setBookings([
-                    {
-                        id: "INV-8f9d2c1",
-                        profiles: { full_name: "Ahmad Zain" },
-                        packages: { title: "Umroh Syawal 9 Hari" },
-                        tracking_data: {
-                            document: { stages: [{ id: 'ktp', done: true }, { id: 'passport', done: true }, { id: 'complete', done: false }] },
-                            visa: { stages: [{ id: 'submit', done: true }, { id: 'process', done: true }, { id: 'approved', done: false }] }
-                        }
-                    },
-                    {
-                        id: "INV-3a7b9e4",
-                        profiles: { full_name: "Siti Aminah" },
-                        packages: { title: "Umroh Plus Turki" },
-                        tracking_data: {
-                            document: { stages: [{ id: 'ktp', done: true }, { id: 'passport', done: true }, { id: 'complete', done: true }] },
-                            visa: { stages: [{ id: 'submit', done: true }, { id: 'process', done: true }, { id: 'approved', done: true }] }
-                        }
-                    },
-                    {
-                        id: "INV-6c2d1f8",
-                        profiles: { full_name: "Budi Santoso" },
-                        packages: { title: "Umroh VIP Ramadhan" },
-                        tracking_data: {
-                            document: { stages: [{ id: 'ktp', done: false }, { id: 'passport', done: false }, { id: 'complete', done: false }] },
-                            visa: { stages: [{ id: 'submit', done: false }, { id: 'process', done: false }, { id: 'approved', done: false }] }
-                        }
-                    }
-                ]);
+                console.error("Error loading documents:", err);
+                setUseSupabase(false);
             } finally {
                 setLoading(false);
             }

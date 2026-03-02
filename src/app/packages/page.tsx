@@ -4,7 +4,6 @@ import { Database } from "@/types/database.types";
 
 export const revalidate = 3600; // Revalidate every hour
 
-import { MOCK_PACKAGES } from "@/app/page";
 
 export default async function PackagesPage() {
     let packagesData = null;
@@ -17,10 +16,9 @@ export default async function PackagesPage() {
             .order("start_date", { ascending: true });
 
         if (error) throw error;
-        packagesData = packages;
+        packagesData = packages || [];
     } catch (err) {
-        // Silently fallback to mock data since env vars are placeholders
-        packagesData = MOCK_PACKAGES;
+        console.error("Error fetching packages:", err);
     }
 
     return (

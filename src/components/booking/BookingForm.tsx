@@ -77,8 +77,63 @@ export function BookingForm({ pkg, user }: BookingFormProps) {
         setLoading(true);
         setError(null);
         try {
-            await new Promise(resolve => setTimeout(resolve, 1200));
-            router.push("/bookings/success");
+            if (!user) throw new Error("Anda harus login untuk melakukan pemesanan.");
+
+            let ktpUrl = null;
+            let passportUrl = null;
+
+            // 1. Upload KTP
+            if (ktpFile) {
+                const ext = ktpFile.name.split('.').pop();
+                const fileName = `${user.id}/ktp-${Date.now()}.${ext}`;
+                const { error: ktpError } = await supabase.storage
+                    .from('documents')
+                    .upload(fileName, ktpFile);
+                if (ktpError) {
+                    // Jika error tidak menemukan bucket 'documents', kita coba log saja
+                    console.error("KTP Upload Error", ktpError);
+                    throw new Error("Gagal upload KTP. Pastikan bucket 'documents' telah dibuat di Supabase.");
+                }
+                const { data } = supabase.storage.from('documents').getPublicUrl(fileName);
+                ktpUrl = data.publicUrl;
+            }
+
+            // 2. Upload Passport (Optional)
+            if (passportFile) {
+                const ext = passportFile.name.split('.').pop();
+                const fileName = `${user.id}/paspor-${Date.now()}.${ext}`;
+                const { error: ppError } = await supabase.storage
+                    .from('documents')
+                    .upload(fileName, passportFile);
+                if (ppError) {
+                    console.error("Passport Upload Error", ppError);
+                } else {
+                    const { data } = supabase.storage.from('documents').getPublicUrl(fileName);
+                    passportUrl = data.publicUrl;
+                }
+            }
+
+            // 3. Simpan Transaksi Booking
+            const { error: bookingError } = await supabase.from('bookings').insert({
+                user_id: user.id,
+                package_id: pkg.id,
+                status: 'pending',
+                payment_status: 'unpaid',
+                payment_method: paymentScheme,
+                invoice_id: invoiceId,
+                ktp_url: ktpUrl,
+                passport_url: passportUrl,
+                tracking_data: {
+                    whatsapp: whatsapp,
+                    price: totalTagihanSaatIni,
+                    gateway_method: paymentGatewayMethod,
+                    gateway_detail: paymentGatewayDetail
+                }
+            });
+
+            if (bookingError) throw bookingError;
+
+            router.push(`/bookings/success?invoice=${invoiceId}`);
             router.refresh();
         } catch (err: any) {
             setError(err.message || "Gagal membuat pesanan.");
@@ -109,10 +164,10 @@ export function BookingForm({ pkg, user }: BookingFormProps) {
                     <div key={step.num} className="flex flex-col items-center gap-1.5 bg-white z-10 px-1">
                         <div
                             className={`w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold transition-all border-2 ${currentStep > step.num
-                                    ? "bg-[#d4a017] border-[#d4a017] text-white"
-                                    : currentStep === step.num
-                                        ? "bg-white border-[#d4a017] text-[#d4a017]"
-                                        : "bg-white border-gray-200 text-gray-400"
+                                ? "bg-[#d4a017] border-[#d4a017] text-white"
+                                : currentStep === step.num
+                                    ? "bg-white border-[#d4a017] text-[#d4a017]"
+                                    : "bg-white border-gray-200 text-gray-400"
                                 }`}
                         >
                             {currentStep > step.num ? <CheckCircle2 className="w-5 h-5" /> : step.num}

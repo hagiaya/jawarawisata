@@ -63,34 +63,10 @@ export default function AdminDeparturesPage() {
                 throw new Error("No data or error");
             }
         } catch (err) {
-            // Local fallback
-            const saved = localStorage.getItem("adminDepartures");
-            if (saved) {
-                try {
-                    setDepartures(JSON.parse(saved));
-                } catch { }
-            } else {
-                setDepartures([
-                    {
-                        id: "DEP-1",
-                        kloter_name: "KLT-001 (Syawal)",
-                        mutawif_name: "Ust. Ahmad Fauzi, Lc",
-                        departure_date: "2026-05-15",
-                        airlines: "Turkish Airlines (TK-9712)",
-                        package_id: null,
-                        packages: { title: "Umroh Berkah Plus Turki 9 Hari" },
-                        status: "Persiapan",
-                        notes: ""
-                    }
-                ]);
-            }
+            console.error("Error fetching departures:", err);
         } finally {
             setLoading(false);
         }
-    };
-
-    const saveToStorage = (list: Departure[]) => {
-        localStorage.setItem("adminDepartures", JSON.stringify(list));
     };
 
     const openAddModal = () => {
@@ -125,18 +101,6 @@ export default function AdminDeparturesPage() {
                     await publicSupabase.from("departures").update(payload).eq("id", form.id);
                 }
                 await fetchData(); // refresh data
-            } else {
-                // Local logic
-                if (modalMode === "add") {
-                    const newDep = { ...form, id: `DEP-${Date.now()}` } as Departure;
-                    const newList = [...departures, newDep];
-                    setDepartures(newList);
-                    saveToStorage(newList);
-                } else {
-                    const newList = departures.map(d => d.id === form.id ? { ...d, ...form } : d) as Departure[];
-                    setDepartures(newList);
-                    saveToStorage(newList);
-                }
             }
             closeModal();
         } catch (err) {
@@ -153,10 +117,6 @@ export default function AdminDeparturesPage() {
                 const { publicSupabase } = await import("@/lib/supabase/public");
                 await publicSupabase.from("departures").delete().eq("id", id);
                 await fetchData();
-            } else {
-                const newList = departures.filter(d => d.id !== id);
-                setDepartures(newList);
-                saveToStorage(newList);
             }
         } catch (err) {
             alert("Error menghapus");

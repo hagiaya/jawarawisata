@@ -8,285 +8,13 @@ import { PackageCard } from "@/components/packages/PackageCard";
 import { FlashSaleCountdown } from "@/components/ui/FlashSaleCountdown";
 
 
-const DEFAULT_USTADZ = [
-  {
-    id: "1",
-    name: "Ustadz Adi Hidayat, Lc., M.A.",
-    role: "Ulama & Dai Nasional",
-    photo_url: "https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEgQPhIiS8RTh1zGO3qo9S9XsaQ8TANKkRvWoLfwlJS_XQUgW80885R56r97MUgGGPMxq9sQx1bVqPQshLkhBKdl5C3y3YeDEePtqPGUhTydTFRx07eZrE9SyTxKlBbdmstFPv9D4kk-RKY/s584/images+%25281%2529.jpg",
-  },
-  {
-    id: "2",
-    name: "Ustadz Abdul Somad, Lc., M.A.",
-    role: "Ulama & Dai Nasional",
-    photo_url: "https://d54-invdn-com.investing.com/content/pic95ba09ceedeef79d6e42480271821e81.jpg",
-  },
-  {
-    id: "3",
-    name: "Ustadz Khalid Basalamah, M.A.",
-    role: "Dai & Ulama Islam",
-    photo_url: "https://magelangekspres.disway.id/upload/73b306fd3a095052d32f420e4674067e.jpeg",
-  },
-  {
-    id: "4",
-    name: "Ustadz Felix Siauw",
-    role: "Dai & Penulis",
-    photo_url: "https://satriadharma.com/wp-content/uploads/2022/01/ustad-felix-siauw-instagram.jpg",
-  },
-];
 
 export const revalidate = 3600;
-
-export const MOCK_PACKAGES = [
-  // === FLASH SALE PACKAGES (promo_price set, flash_sale: true) ===
-  {
-    id: "mock-1",
-    created_at: new Date().toISOString(),
-    title: "Umroh Berkah Plus Turki 12 Hari",
-    description: "Perjalanan ibadah Umroh sekaligus menjelajah jejak sejarah Islam di Turki dengan fasilitas terbaik dan pembimbing profesional.",
-    price: 32500000,
-    start_date: "2025-05-15",
-    end_date: "2025-05-27",
-    image_url: "https://images.unsplash.com/photo-1591604129939-f1efa4d9f7fa?q=80&w=800",
-    capacity: 45,
-    available_seats: 10,
-    package_type: "Plus Turki",
-    hotel_makkah: "Swissôtel Al Maqam",
-    hotel_madinah: "Anwar Al Madinah",
-    airlines: "Turkish Airlines",
-    promo_price: 28900000,
-    itinerary_pdf_url: null,
-    is_active: true,
-    flash_sale: true,
-  },
-  {
-    id: "mock-2",
-    created_at: new Date().toISOString(),
-    title: "Umroh Reguler Syawal 9 Hari",
-    description: "Nikmati kekhusyukan umroh di bulan Syawal dengan cuaca yang bersahabat dan jarak hotel dekat Masjidil Haram.",
-    price: 28500000,
-    start_date: "2025-06-10",
-    end_date: "2025-06-19",
-    image_url: "https://images.unsplash.com/photo-1565552684305-7e43f3665045?q=80&w=800",
-    capacity: 45,
-    available_seats: 8,
-    package_type: "Reguler",
-    hotel_makkah: "Pullman ZamZam",
-    hotel_madinah: "Rove Madinah",
-    airlines: "Saudia Airlines",
-    promo_price: 24900000,
-    itinerary_pdf_url: null,
-    is_active: true,
-    flash_sale: true,
-  },
-  {
-    id: "mock-3",
-    created_at: new Date().toISOString(),
-    title: "Umroh VIP Ramadhan 15 Hari",
-    description: "Pengalaman ibadah Ramadhan maksimal dengan fasilitas VIP. Rasakan malam Lailatul Qadar di Tanah Suci.",
-    price: 45000000,
-    start_date: "2026-03-01",
-    end_date: "2026-03-15",
-    image_url: "https://images.unsplash.com/photo-1519817650390-64a93db51149?q=80&w=800",
-    capacity: 30,
-    available_seats: 5,
-    package_type: "VIP",
-    hotel_makkah: "Fairmont Makkah Clock Royal",
-    hotel_madinah: "The Oberoi Madinah",
-    airlines: "Garuda Indonesia",
-    promo_price: 39900000,
-    itinerary_pdf_url: null,
-    is_active: true,
-    flash_sale: true,
-  },
-  // === REGULAR PACKAGES ===
-  {
-    id: "mock-4",
-    created_at: new Date().toISOString(),
-    title: "Umroh Plus Maroko 14 Hari",
-    description: "Ibadah Umroh sekaligus mengenal peradaban Islam di Maroko – Casablanca, Fez, Marrakech dan Masjid Hassan II.",
-    price: 38000000,
-    start_date: "2025-07-20",
-    end_date: "2025-08-03",
-    image_url: "https://images.unsplash.com/photo-1539037116277-4db20889f2d4?q=80&w=800",
-    capacity: 40,
-    available_seats: 20,
-    package_type: "Plus Maroko",
-    hotel_makkah: "Hilton Suites Makkah",
-    hotel_madinah: "Dar Al Taqwa",
-    airlines: "Royal Air Maroc",
-    promo_price: null,
-    itinerary_pdf_url: null,
-    is_active: true,
-    flash_sale: false,
-  },
-  {
-    id: "mock-5",
-    created_at: new Date().toISOString(),
-    title: "Umroh Reguler Zulhijjah 10 Hari",
-    description: "Rasakan suasana ibadah yang syahdu menjelang Idul Adha di Tanah Suci bersama jamaah pilihan.",
-    price: 27500000,
-    start_date: "2025-06-25",
-    end_date: "2025-07-05",
-    image_url: "https://images.unsplash.com/photo-1564121211835-18aa715370a2?q=80&w=800",
-    capacity: 50,
-    available_seats: 30,
-    package_type: "Reguler",
-    hotel_makkah: "Mövenpick Hotel & Residences",
-    hotel_madinah: "Anwar Al Madinah Mövenpick",
-    airlines: "Saudia Airlines",
-    promo_price: null,
-    itinerary_pdf_url: null,
-    is_active: true,
-    flash_sale: false,
-  },
-  {
-    id: "mock-6",
-    created_at: new Date().toISOString(),
-    title: "Umroh Plus Mesir & Aqsa 16 Hari",
-    description: "Perpaduan sempurna antara ibadah Umroh, wisata sejarah Mesir, dan kunjungan ke Masjidil Aqsa Palestina.",
-    price: 42000000,
-    start_date: "2025-08-10",
-    end_date: "2025-08-26",
-    image_url: "https://images.unsplash.com/photo-1542816417-0983c9c9ad53?q=80&w=800",
-    capacity: 35,
-    available_seats: 15,
-    package_type: "Plus Aqsa",
-    hotel_makkah: "Swissôtel Al Maqam",
-    hotel_madinah: "Pullman Zamzam Madinah",
-    airlines: "Egyptair",
-    promo_price: null,
-    itinerary_pdf_url: null,
-    is_active: true,
-    flash_sale: false,
-  },
-  {
-    id: "mock-7",
-    created_at: new Date().toISOString(),
-    title: "Umroh Plus Dubai 11 Hari",
-    description: "Ibadah Umroh khusyuk dengan bonus eksplor kemewahan Dubai – Burj Khalifa, Dubai Mall, Desert Safari, dan lebih banyak lagi.",
-    price: 34500000,
-    start_date: "2025-09-05",
-    end_date: "2025-09-16",
-    image_url: "https://images.unsplash.com/photo-1563170351-be54be74c4e5?q=80&w=800",
-    capacity: 40,
-    available_seats: 22,
-    package_type: "Plus Dubai",
-    hotel_makkah: "Conrad Makkah",
-    hotel_madinah: "Hilton Madinah",
-    airlines: "Emirates",
-    promo_price: null,
-    itinerary_pdf_url: null,
-    is_active: true,
-    flash_sale: false,
-  },
-  {
-    id: "mock-8",
-    created_at: new Date().toISOString(),
-    title: "Umroh Plus Uzbekistan 13 Hari",
-    description: "Jelajahi kota-kota bersejarah Islam di Uzbekistan – Samarkand & Bukhara – sebelum beribadah Umroh di Tanah Suci.",
-    price: 36500000,
-    start_date: "2025-10-01",
-    end_date: "2025-10-14",
-    image_url: "https://images.unsplash.com/photo-1623421736903-b4083b4aed32?q=80&w=800",
-    capacity: 35,
-    available_seats: 18,
-    package_type: "Plus Uzbekistan",
-    hotel_makkah: "Al Safwah Royale Orchid",
-    hotel_madinah: "Saraya Taba Hotel",
-    airlines: "Uzbekistan Airways",
-    promo_price: null,
-    itinerary_pdf_url: null,
-    is_active: true,
-    flash_sale: false,
-  },
-  {
-    id: "mock-9",
-    created_at: new Date().toISOString(),
-    title: "Haji Khusus ONH Plus 2026",
-    description: "Wujudkan impian Haji Mabrur dengan fasilitas premium, bimbingan ustadz profesional, dan akomodasi bintang 5 terdekat ke Masjidil Haram.",
-    price: 185000000,
-    start_date: "2026-05-20",
-    end_date: "2026-06-25",
-    image_url: "https://images.unsplash.com/photo-1591604129939-f1efa4d9f7fa?q=80&w=800",
-    capacity: 25,
-    available_seats: 10,
-    package_type: "Haji Khusus",
-    hotel_makkah: "Fairmont Makkah Clock Royal",
-    hotel_madinah: "The Oberoi Madinah",
-    airlines: "Garuda Indonesia",
-    promo_price: null,
-    itinerary_pdf_url: null,
-    is_active: true,
-    flash_sale: false,
-  },
-  {
-    id: "mock-10",
-    created_at: new Date().toISOString(),
-    title: "Umroh Keluarga Hemat 9 Hari",
-    description: "Paket spesial keluarga dengan harga terjangkau namun tetap nyaman. Cocok untuk parents + anak-anak pertama kalinya ke Tanah Suci.",
-    price: 24500000,
-    start_date: "2025-11-15",
-    end_date: "2025-11-24",
-    image_url: "https://images.unsplash.com/photo-1519817650390-64a93db51149?q=80&w=800",
-    capacity: 60,
-    available_seats: 35,
-    package_type: "Keluarga",
-    hotel_makkah: "Al Kiswah Towers",
-    hotel_madinah: "Saja Al Madinah Hotel",
-    airlines: "Lion Air / Batik Air",
-    promo_price: null,
-    itinerary_pdf_url: null,
-    is_active: true,
-    flash_sale: false,
-  },
-  {
-    id: "mock-11",
-    created_at: new Date().toISOString(),
-    title: "Umroh Backpacker Budget 8 Hari",
-    description: "Umroh dengan budget terjangkau tanpa mengorbankan kekhusyukan ibadah. Pilihan tepat untuk generasi muda yang ingin ke Tanah Suci.",
-    price: 19900000,
-    start_date: "2025-12-05",
-    end_date: "2025-12-13",
-    image_url: "https://images.unsplash.com/photo-1565552684305-7e43f3665045?q=80&w=800",
-    capacity: 50,
-    available_seats: 40,
-    package_type: "Budget",
-    hotel_makkah: "Grand Makkah Hotel",
-    hotel_madinah: "Shaza Madinah",
-    airlines: "Air Asia",
-    promo_price: null,
-    itinerary_pdf_url: null,
-    is_active: true,
-    flash_sale: false,
-  },
-  {
-    id: "mock-12",
-    created_at: new Date().toISOString(),
-    title: "Umroh Plus Eropa Islam 18 Hari",
-    description: "Napak tilas jejak Islam di Eropa – Granada Spanyol, Cordoba, Istanbul Turki – sebelum menyempurnakan ibadah Umroh di Tanah Haram.",
-    price: 52000000,
-    start_date: "2025-10-20",
-    end_date: "2025-11-07",
-    image_url: "https://images.unsplash.com/photo-1527668752968-14dc70a27c95?q=80&w=800",
-    capacity: 30,
-    available_seats: 12,
-    package_type: "Plus Eropa",
-    hotel_makkah: "Swissôtel Al Maqam",
-    hotel_madinah: "InterContinental Madinah",
-    airlines: "Turkish Airlines",
-    promo_price: null,
-    itinerary_pdf_url: null,
-    is_active: true,
-    flash_sale: false,
-  },
-];
-
 
 export default async function Home() {
   let packagesData = null;
   let fetchError = null;
-  let ustadzData: any[] = DEFAULT_USTADZ;
+  let ustadzData: any[] = [];
 
   try {
     const { data: packages, error } = await publicSupabase
@@ -297,10 +25,9 @@ export default async function Home() {
       .limit(12);
 
     if (error) throw error;
-    packagesData = packages;
+    packagesData = packages || [];
   } catch (err) {
-    // Silently fallback to mock data since env vars are placeholders
-    packagesData = MOCK_PACKAGES;
+    console.error("Failed to fetch packages", err);
   }
 
   const flashSalePackages = (packagesData || []).filter((p: any) => p.flash_sale || p.promo_price);
@@ -316,7 +43,7 @@ export default async function Home() {
       ustadzData = ustadz;
     }
   } catch (err) {
-    // fallback to default ustadz
+    console.error("Failed to fetch ustadz", err);
   }
 
 

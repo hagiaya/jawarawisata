@@ -14,13 +14,14 @@ type ProfileRow = Database["public"]["Tables"]["profiles"]["Row"];
 
 export default function AdminDashboard() {
     const [stats, setStats] = useState({
-        revenue: 0,
-        profit: 0,
-        newTransactions: 0,
-        newUsers: 0,
+        pendapatan: 0,
+        keuntungan: 0,
+        transaksiBaru: 0,
+        penggunaBaru: 0,
         recentBookings: [] as any[],
         chartData: [] as { month: string; value: number }[],
     });
+    const [error, setError] = useState<string | null>(null);
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
@@ -42,67 +43,51 @@ export default function AdminDashboard() {
                     .order("created_at", { ascending: false })
                     .limit(50);
 
-                if (!bookingsError && bookingsData) {
-                    // Calculate stats
-                    let totalRevenue = 0;
-                    let newTx = 0;
+                // Calculate stats
+                let totalRevenue = 0;
+                let newTx = 0;
 
-                    bookingsData.forEach((b: any) => {
-                        if (b.status !== 'cancelled') {
-                            const price = b.packages?.promo_price || b.packages?.price || 0;
-                            totalRevenue += price;
-                        }
-                        if (b.status === 'pending') {
-                            newTx++;
-                        }
-                    });
+                const bookings = bookingsData || [];
+                const users = usersData || [];
 
-                    // Margin profit estimated at 15%
-                    const totalProfit = totalRevenue * 0.15;
-
-                    // Chart data mock based on revenue trend
-                    const months = ["Sep", "Okt", "Nov", "Des", "Jan", "Feb"];
-                    const fakeTrend = [0.3, 0.5, 0.4, 0.8, 0.6, 1.0]; // scale multipliers
-                    const baseChartValue = totalRevenue > 0 ? totalRevenue / 2 : 150000000;
-
-                    const chartData = months.map((m, i) => ({
-                        month: m,
-                        value: baseChartValue * fakeTrend[i] * (Math.random() * 0.2 + 0.9)
-                    }));
-
-                    setStats({
-                        revenue: totalRevenue || 850000000,
-                        profit: totalProfit || 127500000,
-                        newTransactions: newTx || 12,
-                        newUsers: usersData?.length || 45,
-                        recentBookings: bookingsData.slice(0, 5) || [],
-                        chartData: chartData,
-                    });
-                } else {
-                    throw new Error("No data");
-                }
-            } catch (err) {
-                // Fallback Mock Data if Supabase is empty or not connected
-                setStats({
-                    revenue: 1250000000,
-                    profit: 187500000,
-                    newTransactions: 8,
-                    newUsers: 24,
-                    recentBookings: [
-                        { id: "TX12093M", profiles: { full_name: "Ahmad Zain" }, packages: { title: "Umroh Syawal 9 Hari" }, status: "pending", created_at: new Date().toISOString() },
-                        { id: "TX12092K", profiles: { full_name: "Siti Aminah" }, packages: { title: "Umroh Plus Turki" }, status: "confirmed", created_at: new Date(Date.now() - 86400000).toISOString() },
-                        { id: "TX12091L", profiles: { full_name: "Budi Santoso" }, packages: { title: "Umroh Plus Dubai" }, status: "confirmed", created_at: new Date(Date.now() - 172800000).toISOString() },
-                        { id: "TX12090J", profiles: { full_name: "Dewi Lestari" }, packages: { title: "Haji Khusus 2026" }, status: "pending", created_at: new Date(Date.now() - 259200000).toISOString() },
-                    ],
-                    chartData: [
-                        { month: "Sep", value: 350000000 },
-                        { month: "Okt", value: 420000000 },
-                        { month: "Nov", value: 380000000 },
-                        { month: "Des", value: 750000000 },
-                        { month: "Jan", value: 620000000 },
-                        { month: "Feb", value: 890000000 },
-                    ]
+                bookings.forEach((b: any) => {
+                    if (b.status !== 'cancelled') {
+                        const price = b.packages?.promo_price || b.packages?.price || 0;
+                        totalRevenue += price;
+                    }
+                    if (b.status === 'pending') {
+                        newTx++;
+                    }
                 });
+
+                // Margin profit estimated at 15%
+                const totalProfit = totalRevenue * 0.15;
+
+                // Chart data based on revenue trend or fallback
+                const months = ["Sep", "Okt", "Nov", "Des", "Jan", "Feb"];
+                const fakeTrend = [0.3, 0.5, 0.4, 0.8, 0.6, 1.0];
+                const baseChartValue = totalRevenue > 0 ? totalRevenue / 2 : 150000000;
+
+                const chartData = months.map((m, i) => ({
+                    month: m,
+                    value: baseChartValue * fakeTrend[i] * (Math.random() * 0.2 + 0.9)
+                }));
+
+                setStats({
+                    pendapatan: totalRevenue,
+                    keuntungan: totalProfit,
+                    transaksiBaru: newTx,
+                    penggunaBaru: users.length,
+                    recentBookings: bookings.slice(0, 5),
+                    chartData: chartData,
+                });
+
+                if (bookingsError || usersError) {
+                    console.warn("Dashboard fetch warning:", bookingsError || usersError);
+                }
+            } catch (err: any) {
+                console.error("Error fetching dashboard data:", err);
+                setError(err.message || "Gagal memuat data dashboard.");
             } finally {
                 setLoading(false);
             }
@@ -128,6 +113,24 @@ export default function AdminDashboard() {
         return (
             <div className="p-8 min-h-screen flex items-center justify-center">
                 <div className="w-8 h-8 rounded-full border-4 border-gray-200 border-t-[#d4a017] animate-spin" />
+            </div>
+        );
+    }
+
+    if (error) {
+        return (
+            <div className="p-8 min-h-screen flex flex-col items-center justify-center text-center">
+                <div className="w-16 h-16 bg-red-100 text-red-600 rounded-full flex items-center justify-center mb-4">
+                    <Activity className="w-8 h-8" />
+                </div>
+                <h1 className="text-2xl font-bold text-gray-900 mb-2">Terjadi Kesalahan</h1>
+                <p className="text-gray-500 mb-6 max-w-md">{error}</p>
+                <button
+                    onClick={() => window.location.reload()}
+                    className="px-6 py-2 bg-[#d4a017] text-white rounded-xl font-bold"
+                >
+                    Coba Lagi
+                </button>
             </div>
         );
     }
@@ -167,7 +170,7 @@ export default function AdminDashboard() {
                             </span>
                         </div>
                         <h3 className="text-gray-500 text-sm font-medium mb-1">Total Pendapatan</h3>
-                        <p className="text-2xl font-black text-gray-900">{formatRupiah(stats.revenue)}</p>
+                        <p className="text-2xl font-black text-gray-900">{formatRupiah(stats.pendapatan)}</p>
                     </div>
                 </div>
 
@@ -184,7 +187,7 @@ export default function AdminDashboard() {
                             </span>
                         </div>
                         <h3 className="text-gray-500 text-sm font-medium mb-1">Total Keuntungan Sah (Est. 15%)</h3>
-                        <p className="text-2xl font-black text-gray-900">{formatRupiah(stats.profit)}</p>
+                        <p className="text-2xl font-black text-gray-900">{formatRupiah(stats.keuntungan)}</p>
                     </div>
                 </div>
 
@@ -202,7 +205,7 @@ export default function AdminDashboard() {
                         </div>
                         <h3 className="text-gray-500 text-sm font-medium mb-1">Transaksi Baru</h3>
                         <p className="text-2xl font-black text-gray-900">
-                            {stats.newTransactions} <span className="text-sm font-medium text-gray-400">pesanan</span>
+                            {stats.transaksiBaru} <span className="text-sm font-medium text-gray-400">pesanan</span>
                         </p>
                     </div>
                 </div>
@@ -221,7 +224,7 @@ export default function AdminDashboard() {
                         </div>
                         <h3 className="text-gray-500 text-sm font-medium mb-1">Pengguna Baru</h3>
                         <p className="text-2xl font-black text-gray-900">
-                            {stats.newUsers} <span className="text-sm font-medium text-gray-400">akun</span>
+                            {stats.penggunaBaru} <span className="text-sm font-medium text-gray-400">akun</span>
                         </p>
                     </div>
                 </div>
@@ -298,8 +301,8 @@ export default function AdminDashboard() {
                         {stats.recentBookings.length > 0 ? stats.recentBookings.map((tx, idx) => (
                             <div key={idx} className="flex items-center gap-4">
                                 <div className={`w-10 h-10 rounded-full flex items-center justify-center shrink-0 ${tx.status === 'pending' ? 'bg-amber-100 text-amber-600' :
-                                        tx.status === 'confirmed' ? 'bg-green-100 text-green-600' :
-                                            'bg-red-100 text-red-600'
+                                    tx.status === 'confirmed' ? 'bg-green-100 text-green-600' :
+                                        'bg-red-100 text-red-600'
                                     }`}>
                                     <Activity className="w-5 h-5" />
                                 </div>
@@ -316,8 +319,8 @@ export default function AdminDashboard() {
                                         {formatRupiah(tx.packages?.promo_price || tx.packages?.price || 25000000)}
                                     </div>
                                     <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full capitalize ${tx.status === 'pending' ? 'bg-amber-50 text-amber-600' :
-                                            tx.status === 'confirmed' ? 'bg-green-50 text-green-600' :
-                                                'bg-red-50 text-red-600'
+                                        tx.status === 'confirmed' ? 'bg-green-50 text-green-600' :
+                                            'bg-red-50 text-red-600'
                                         }`}>
                                         {tx.status}
                                     </span>

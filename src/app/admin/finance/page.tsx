@@ -21,33 +21,10 @@ export default function AdminFinancePage() {
                 if (!error && data) {
                     setBookings(data);
                 } else {
-                    // Fallback to mock logic if supabase not ready
-                    setBookings([
-                        {
-                            id: "3a7b9e4a",
-                            created_at: new Date().toISOString(),
-                            profiles: { full_name: "Siti Aminah" },
-                            packages: { title: "Umroh Plus Turki", price: 32500000 },
-                            tracking_data: { payment: { total: 32500000, paid: 32500000 } }
-                        },
-                        {
-                            id: "8f9d2c1b",
-                            created_at: new Date().toISOString(),
-                            profiles: { full_name: "Ahmad Zain" },
-                            packages: { title: "Umroh Syawal", price: 28000000 },
-                            payment_status: "dp_paid"
-                        },
-                        {
-                            id: "1b8f4d9c",
-                            created_at: new Date().toISOString(),
-                            profiles: { full_name: "Hasanuddin" },
-                            packages: { title: "Umroh Reguler", price: 25000000 },
-                            payment_status: "unpaid"
-                        }
-                    ]);
+                    console.warn("No data or error:", error);
                 }
             } catch (err) {
-                console.error(err);
+                console.error("Error loading finance data:", err);
             } finally {
                 setLoading(false);
             }
