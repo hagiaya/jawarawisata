@@ -19,7 +19,11 @@ import {
     ArrowRight,
     HeadphonesIcon,
     FileText,
-    Calendar
+    Calendar,
+    ChevronRight,
+    XCircle,
+    Info,
+    Package as PackageIcon
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
@@ -44,6 +48,13 @@ export default function ClientApp({ packagesData }: { packagesData: Package[] })
     const [trackingInvoice, setTrackingInvoice] = useState<string | null>(null);
     const [searchInvoice, setSearchInvoice] = useState("");
     const router = useRouter();
+    const supabase = createClient();
+
+    const [user, setUser] = useState<any>(null);
+    const [authMode, setAuthMode] = useState<'login' | 'register'>('login');
+    const [email, setEmail] = useState("");
+    const [password, setPassword] = useState("");
+    const [fullName, setFullName] = useState("");
 
     useEffect(() => {
         const fetchUserBookings = async (userId: string) => {
@@ -441,7 +452,7 @@ export default function ClientApp({ packagesData }: { packagesData: Package[] })
                                             <h5 className="font-bold text-sm text-gray-800 truncate">{booking.packages?.title || "Paket Umroh"}</h5>
                                             <div className="flex items-center gap-2 mt-1">
                                                 <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${booking.status === 'confirmed' ? 'bg-green-100 text-green-600' :
-                                                        booking.status === 'pending' ? 'bg-amber-100 text-amber-600' : 'bg-gray-100 text-gray-600'
+                                                    booking.status === 'pending' ? 'bg-amber-100 text-amber-600' : 'bg-gray-100 text-gray-600'
                                                     }`}>
                                                     {booking.status.toUpperCase()}
                                                 </span>
@@ -510,7 +521,7 @@ export default function ClientApp({ packagesData }: { packagesData: Package[] })
                                                 {userBookings.slice(0, 2).map(b => (
                                                     <div key={b.id} className="flex items-center gap-3">
                                                         <div className="w-10 h-10 bg-stone-50 rounded-lg flex items-center justify-center border border-stone-100">
-                                                            <Package className="w-5 h-5 text-[#d4a017]" />
+                                                            <PackageIcon className="w-5 h-5 text-[#d4a017]" />
                                                         </div>
                                                         <div className="flex-1 min-w-0">
                                                             <p className="text-xs font-bold text-gray-800 truncate">{b.packages?.title}</p>
