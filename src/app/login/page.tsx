@@ -23,7 +23,7 @@ export default function LoginPage() {
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const router = useRouter();
-    const supabase = createClient();
+    const [supabase] = useState(() => createClient());
 
     const handleLogin = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -58,8 +58,13 @@ export default function LoginPage() {
 
             router.push("/");
             router.refresh();
-        } catch (err) {
-            setError("Telah terjadi kesalahan yang tidak terduga.");
+        } catch (err: any) {
+            console.error("Login catch error:", err);
+            if (err.message === "Failed to fetch") {
+                setError("Gagal terhubung ke database. Pastikan koneksi internet aktif dan Environment Variables sudah benar.");
+            } else {
+                setError("Telah terjadi kesalahan yang tidak terduga.");
+            }
         } finally {
             setLoading(false);
         }

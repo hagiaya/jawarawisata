@@ -40,7 +40,7 @@ export default function AdminDashboard() {
                 const { data: usersData, error: usersError } = await publicSupabase
                     .from("profiles")
                     .select("*")
-                    .order("created_at", { ascending: false })
+                    .order("updated_at", { ascending: false })
                     .limit(50);
 
                 // Calculate stats
