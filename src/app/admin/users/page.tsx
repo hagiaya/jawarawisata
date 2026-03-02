@@ -1,11 +1,11 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Search, Eye, Filter, Users as UsersIcon, Copy, Link as LinkIcon, Download, Trash2, Key } from "lucide-react";
+import { Search, Eye, Filter, Users as UsersIcon, Copy, Link as LinkIcon, Download, Trash2, ShieldCheck, UserCheck, CheckCircle2, XCircle, Clock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Database } from "@/types/database.types";
 
-type ProfileRow = Database["public"]["Tables"]["profiles"]["Row"];
+type ProfileRow = Database["public"]["Tables"]["profiles"]["Row"] & { is_verified?: boolean };
 
 export default function AdminUsersPage() {
     const [users, setUsers] = useState<ProfileRow[]>([]);
@@ -40,21 +40,62 @@ export default function AdminUsersPage() {
     };
 
     const handleDeleteUser = async (user: ProfileRow) => {
-        if (!window.confirm(`Hapus pengguna "${user.full_name || user.id}"? Tindakan ini hanya menghapus data profil dan tidak menghapus akun login Supabase Auth.`)) return;
+        const confirmDelete = window.confirm(
+            `Hapus PROFIL pengguna "${user.full_name || user.id}"?\n\n` +
+            `Catatan: Ini hanya menghapus data profil di tabel database. ` +
+            `Akun login (Supabase Auth) tetap ada.\n\n` +
+            `Agar pengguna ini hilang permanen dan tidak muncul lagi saat di-refresh, ` +
+            `Anda HARUS menghapus akunnya melalui Supabase Dashboard -> Authentication.`
+        );
+
+        if (!confirmDelete) return;
 
         try {
             const { publicSupabase } = await import("@/lib/supabase/public");
+
+            // Mencoba menghapus
             const { error } = await publicSupabase
                 .from("profiles")
                 .delete()
                 .eq("id", user.id);
 
-            if (error) throw error;
+            if (error) {
+                // Seringkali gagal karena foreign key (ada booking)
+                if (error.code === '23503') {
+                    alert("Gagal: Pengguna ini masih memiliki data Pemesanan (Bookings). Hapus semua pesanan mereka terlebih dahulu.");
+                    return;
+                }
+                throw error;
+            }
 
             setUsers(prev => prev.filter(u => u.id !== user.id));
         } catch (err: any) {
             console.error("Error deleting user:", err);
-            alert("Gagal menghapus pengguna: " + (err.message || "Terjadi kesalahan internal."));
+            alert("Terjadi kesalahan: " + (err.message || "Cek koneksi atau izin database."));
+        }
+    };
+
+    const handleVerifyUser = async (user: ProfileRow) => {
+        const isCurrentlyVerified = (user as any).is_verified;
+        const action = isCurrentlyVerified ? 'Cabut Verifikasi' : 'Verifikasi Jamaah';
+        if (!window.confirm(`${action} untuk "${user.full_name || user.id}"?`)) return;
+
+        try {
+            const { publicSupabase } = await import("@/lib/supabase/public");
+            const newStatus = !isCurrentlyVerified;
+
+            const { error } = await publicSupabase
+                .from("profiles")
+                .update({ is_verified: newStatus } as any)
+                .eq("id", user.id);
+
+            if (error) throw error;
+
+            setUsers(prev => prev.map(u => u.id === user.id ? { ...u, is_verified: newStatus } : u));
+            alert(`Berhasil: Jamaah ${newStatus ? 'TERVERIFIKASI' : 'TIDAK TERVERIFIKASI'}`);
+        } catch (err: any) {
+            console.error("Error updating verification status:", err);
+            alert("Gagal merubah status verifikasi: " + (err.message || "Terjadi kesalahan. Pastikan Anda sudah menjalankan script SQL 'migrasi_verifikasi.sql' di Supabase."));
         }
     };
 
@@ -103,8 +144,8 @@ export default function AdminUsersPage() {
                                 <th className="px-6 py-4">ID User / Avatar</th>
                                 <th className="px-6 py-4">Nama Lengkap</th>
                                 <th className="px-6 py-4">Username / Email</th>
-                                <th className="px-6 py-4">Update Terakhir</th>
-                                <th className="px-6 py-4">Website</th>
+                                <th className="px-6 py-4">Status</th>
+                                <th className="px-6 py-4">Role</th>
                                 <th className="px-6 py-4 text-center">Aksi</th>
                             </tr>
                         </thead>
@@ -141,22 +182,25 @@ export default function AdminUsersPage() {
                                     <td className="px-6 py-4">
                                         <span className="text-gray-600">{user.username || <span className="text-gray-400 italic">Belum diisi</span>}</span>
                                     </td>
-                                    <td className="px-6 py-4 text-gray-500">
-                                        {user.updated_at ? new Date(user.updated_at).toLocaleDateString('id-ID') : '-'}
+                                    <td className="px-6 py-4">
+                                        <span className={`px-2.5 py-1 rounded-full text-xs font-bold flex items-center gap-1.5 w-fit ${(user as any).is_verified ? 'bg-green-100 text-green-700' : 'bg-amber-100 text-amber-700'}`}>
+                                            {(user as any).is_verified ? <CheckCircle2 className="w-3.5 h-3.5" /> : <Clock className="w-3.5 h-3.5" />}
+                                            {(user as any).is_verified ? 'Terverifikasi' : 'Pending'}
+                                        </span>
                                     </td>
                                     <td className="px-6 py-4">
-                                        {user.website ? (
-                                            <a href={user.website} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:text-blue-800 flex items-center gap-1">
-                                                <LinkIcon className="w-3.5 h-3.5" /> Kunjungi
-                                            </a>
-                                        ) : (
-                                            <span className="text-gray-400">-</span>
-                                        )}
+                                        <span className={`px-2 py-1 rounded-full text-xs font-semibold ${user.role === 'admin' ? 'bg-purple-100 text-purple-700' : 'bg-gray-100 text-gray-700'}`}>
+                                            {user.role?.toUpperCase() || 'USER'}
+                                        </span>
                                     </td>
                                     <td className="px-6 py-4">
                                         <div className="flex items-center justify-center gap-2">
-                                            <button className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors border border-transparent hover:border-blue-200" title="Reset Sandi">
-                                                <Key className="w-4 h-4" />
+                                            <button
+                                                onClick={() => handleVerifyUser(user)}
+                                                className={`p-2 rounded-lg transition-colors border border-transparent ${(user as any).is_verified ? 'text-green-600 hover:bg-green-50 hover:border-green-200' : 'text-blue-600 hover:bg-blue-50 hover:border-blue-200'}`}
+                                                title={(user as any).is_verified ? "Cabut Verifikasi" : "Verifikasi Jamaah"}
+                                            >
+                                                {(user as any).is_verified ? <UserCheck className="w-4 h-4" /> : <CheckCircle2 className="w-4 h-4" />}
                                             </button>
                                             <button
                                                 onClick={() => handleDeleteUser(user)}
