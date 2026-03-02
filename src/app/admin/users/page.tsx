@@ -39,6 +39,32 @@ export default function AdminUsersPage() {
         navigator.clipboard.writeText(id);
     };
 
+    const handleDeleteUser = async (user: ProfileRow) => {
+        if (!window.confirm(`Hapus pengguna "${user.full_name || user.id}"? Tindakan ini hanya menghapus data profil dan tidak menghapus akun login Supabase Auth.`)) return;
+
+        try {
+            const { publicSupabase } = await import("@/lib/supabase/public");
+            const { error } = await publicSupabase
+                .from("profiles")
+                .delete()
+                .eq("id", user.id);
+
+            if (error) throw error;
+
+            setUsers(prev => prev.filter(u => u.id !== user.id));
+        } catch (err: any) {
+            console.error("Error deleting user:", err);
+            alert("Gagal menghapus pengguna: " + (err.message || "Terjadi kesalahan internal."));
+        }
+    };
+
+    const [searchTerm, setSearchTerm] = useState("");
+    const filteredUsers = users.filter(user =>
+        (user.full_name?.toLowerCase().includes(searchTerm.toLowerCase())) ||
+        (user.username?.toLowerCase().includes(searchTerm.toLowerCase())) ||
+        (user.id.toLowerCase().includes(searchTerm.toLowerCase()))
+    );
+
     return (
         <div className="p-8 min-h-screen">
             <div className="mb-8 flex flex-col md:flex-row md:items-center justify-between gap-4">
@@ -55,6 +81,8 @@ export default function AdminUsersPage() {
                         <input
                             type="text"
                             placeholder="Cari email / nama..."
+                            value={searchTerm}
+                            onChange={(e) => setSearchTerm(e.target.value)}
                             className="pl-9 pr-4 py-2 bg-white border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#d4a017] focus:border-transparent w-full md:w-64"
                         />
                     </div>
@@ -85,14 +113,14 @@ export default function AdminUsersPage() {
                                 <tr>
                                     <td colSpan={6} className="px-6 py-12 text-center text-gray-400">Loading data...</td>
                                 </tr>
-                            ) : users.length === 0 ? (
+                            ) : filteredUsers.length === 0 ? (
                                 <tr>
                                     <td colSpan={6} className="px-6 py-12 text-center text-gray-400 flex flex-col items-center justify-center">
                                         <UsersIcon className="w-12 h-12 mb-3 text-gray-300" />
-                                        <p>Belum ada data pendaftar.</p>
+                                        <p>Tidak ada pengguna yang sesuai pencarian.</p>
                                     </td>
                                 </tr>
-                            ) : users.map((user) => (
+                            ) : filteredUsers.map((user) => (
                                 <tr key={user.id} className="hover:bg-gray-50/50 transition-colors">
                                     <td className="px-6 py-4 flex items-center gap-3">
                                         <div className="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center overflow-hidden border border-gray-200 shrink-0">
@@ -130,7 +158,11 @@ export default function AdminUsersPage() {
                                             <button className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors border border-transparent hover:border-blue-200" title="Reset Sandi">
                                                 <Key className="w-4 h-4" />
                                             </button>
-                                            <button className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors border border-transparent hover:border-red-200" title="Hapus User">
+                                            <button
+                                                onClick={() => handleDeleteUser(user)}
+                                                className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors border border-transparent hover:border-red-200"
+                                                title="Hapus User"
+                                            >
                                                 <Trash2 className="w-4 h-4" />
                                             </button>
                                         </div>
@@ -140,9 +172,9 @@ export default function AdminUsersPage() {
                         </tbody>
                     </table>
                 </div>
-                {!loading && users.length > 0 && (
+                {!loading && filteredUsers.length > 0 && (
                     <div className="p-4 border-t border-gray-100 flex items-center justify-between text-sm text-gray-500">
-                        <span>Menampilkan {users.length} pengguna terdaftar</span>
+                        <span>Menampilkan {filteredUsers.length} pengguna terdaftar</span>
                         <div className="flex gap-1">
                             <button className="px-3 py-1 border rounded hover:bg-gray-50 disabled:opacity-50" disabled>Seb</button>
                             <button className="px-3 py-1 bg-[#d4a017] text-white rounded">1</button>
